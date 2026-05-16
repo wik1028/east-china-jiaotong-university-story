@@ -842,6 +842,8 @@ const Game = {
     },
 
     renderQuestion() {
+        // 重置锁定状态
+        this.state.isLocked = false;
         const q = this.questions[this.state.currentQ];
         this.elements.progressText.innerHTML = `
         第${this.state.currentQ+1}题 / 共28题
@@ -907,7 +909,14 @@ const Game = {
         for(let i = 0; i < 25; i++) {
             setTimeout(() => this.createPeepText("找到她了"), i * 80);
         }
-        setTimeout(() => this.elements.grayOverlay.classList.remove('active'), 5000);
+        setTimeout(() => {
+            this.elements.grayOverlay.classList.remove('active');
+            this.state.isLocked = false;
+            // 确保下一题按钮可用
+            if(this.state.answers[this.state.currentQ] !== undefined) {
+                this.elements.nextBtn.disabled = false;
+            }
+        }, 5000);
     },
 
     triggerWarmEffect() {
