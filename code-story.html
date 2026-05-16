@@ -655,14 +655,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const diaryDates=["1974.03.12","1974.05.01","1974.07.15",""];
 
     // 所有按钮事件绑定（现在100%有效）
-    document.getElementById('startBtn').addEventListener('click', startStep);
-    document.getElementById('prevBtn').addEventListener('click', goToPrev);
-    document.getElementById('nextBtn').addEventListener('click', goToNext);
-    document.getElementById('diaryPrev').addEventListener('click', prevDiaryPage);
-    document.getElementById('diaryNext').addEventListener('click', nextDiaryPage);
-    document.getElementById('diaryClose').addEventListener('click', closeDiary);
-    document.getElementById('confirmBtn').addEventListener('click', showEndModal);
-    document.getElementById('restartBtn').addEventListener('click', restartQuiz);
+    const startBtn = document.getElementById('startBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const diaryPrevBtn = document.getElementById('diaryPrev');
+    const diaryNextBtn = document.getElementById('diaryNext');
+    const diaryCloseBtn = document.getElementById('diaryClose');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    
+    if(startBtn) startBtn.addEventListener('click', startStep);
+    if(prevBtn) prevBtn.addEventListener('click', goToPrev);
+    if(nextBtn) nextBtn.addEventListener('click', goToNext);
+    if(diaryPrevBtn) diaryPrevBtn.addEventListener('click', prevDiaryPage);
+    if(diaryNextBtn) diaryNextBtn.addEventListener('click', nextDiaryPage);
+    if(diaryCloseBtn) diaryCloseBtn.addEventListener('click', closeDiary);
+    if(confirmBtn) confirmBtn.addEventListener('click', showEndModal);
+    if(restartBtn) restartBtn.addEventListener('click', restartQuiz);
 
     // 开始函数
     function startStep(){
@@ -728,6 +737,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function triggerCaveEffect(){
+        state.isLocked=true;
         const overlay=document.getElementById('grayOverlay');
         overlay.classList.add('active');
         for(let i=0;i<20;i++){
@@ -737,7 +747,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         setTimeout(()=>{
             overlay.classList.remove('active');
-        }, 3000);
+        }, 6000);
     }
 
     // 选择选项
@@ -796,6 +806,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function goToNext(){
+        if(state.answers[state.currentQ]===undefined){
+            return;
+        }
         const opt=questions[state.currentQ].options[state.answers[state.currentQ]];
         if(opt.next===-1){
             // 结束
