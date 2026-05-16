@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>华东交通大学新生入学须知调查</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+font-family:sans-serif;
+font-size:18px;
+background:#fff;
+color:#222;
+min-height:100vh;
+overflow-x:hidden;
+transition:background .3s;
+}
+.container{
+max-width:600px;
+margin:0 auto;
+padding:20px;
+min-height:100vh;
+display:flex;
+flex-direction:column;
+justify-content:center;
+}
+.question-container{display:none;animation:fadeIn .3s}
+.question-container.active{display:block}
+.question-text{
+font-size:clamp(1rem,3.5vw,1.2rem);
+margin-bottom:20px;
+line-height:1.6;
+}
+.options{
+list-style:none;
+display:flex;
+flex-direction:column;
+gap:10px;
+margin-bottom:20px;
+}
+.options li{
+border:2px solid #ddd;
+padding:clamp(12px,3vw,16px);
+cursor:pointer;
+transition:all .2s;
+font-size:clamp(0.9rem,3vw,1rem);
+position:relative;
+}
+.options li:hover{border-color:#999}
+.options li.selected{
+background:#ddd;
+border-color:#999;
+pointer-events:none;
+}
+.options li.locked{
+pointer-events:none;
+opacity:0.6;
+}
+.options li.disappear{
+animation:disappear .5s forwards;
+}
+@keyframes disappear{
+to{opacity:0;height:0;padding:0;margin:0;border:0}
+}
+.btn-nav{
+display:flex;
+gap:10px;
+}
+.btn-nav button{
+flex:1;
+padding:clamp(12px,3vw,16px);
+border:2px solid #222;
+background:#fff;
+cursor:pointer;
+font-size:clamp(0.9rem,3vw,1rem);
+transition:all .2s;
+}
+.btn-nav button:hover{background:#222;color:#fff}
+.btn-nav button:disabled{
+opacity:0.3;
+cursor:not-allowed;
+}
+.btn-nav button.danger{
+background:#c00;
+border-color:#c00;
+color:#fff;
+}
+.btn-nav button.danger:hover{background:#900;border-color:#900}
+.progress{
+text-align:center;
+font-size:clamp(0.8rem,2.5vw,0.9rem);
+color:#666;
+margin-bottom:15px;
+height:20px;
+position:relative;
+}
+.progress-bar{
+position:absolute;
+bottom:0;
+left:0;
+height:3px;
+background:#222;
+transition:width .3s;
+}
+@keyframes fadeIn{
+from{opacity:0;transform:translateY(10px)}
+to{opacity:1;transform:translateY(0)}
+}
+/* Modal */
+.modal-overlay{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.9);
+display:none;
+z-index:1000;
+align-items:center;
+justify-content:center;
+padding:20px;
+}
+.modal-overlay.active{display:flex}
+.modal{
+background:#fff;
+padding:clamp(25px,5vw,35px);
+max-width:450px;
+width:100%;
+text-align:center;
+}
+.modal-title{font-size:clamp(1.1rem,3.5vw,1.3rem);margin-bottom:15px}
+.modal-text{font-size:clamp(0.9rem,3vw,1rem);color:#666;line-height:1.7;margin-bottom:20px}
+.modal-btn{
+padding:12px 30px;
+background:#222;
+color:#fff;
+border:none;
+cursor:pointer;
+font-size:clamp(0.9rem,3vw,1rem);
+}
+.modal-btn:hover{background:#444}
+.modal-btn.gray{
+background:#999;
+cursor:not-allowed;
+}
+/* Warning modal */
+.warning-modal{
+border:3px solid #c00;
+animation:pulse 0.5s infinite alternate;
+}
+.warning-modal .modal-title{color:#c00}
+@keyframes pulse{
+from{transform:scale(1)}
+to{transform:scale(1.02)}
+}
+/* Black screen */
+.black-screen{
+position:fixed;
+inset:0;
+background:#000;
+display:none;
+z-index:2000;
+align-items:center;
+justify-content:center;
+flex-direction:column;
+padding:20px;
+}
+.black-screen.active{display:flex}
+.terror-text{
+color:#c00;
+font-size:clamp(1.2rem,4vw,1.5rem);
+text-align:center;
+}
+/* Peep text for floating */
+.peep-text{
+position:fixed;
+font-size:clamp(1rem,3vw,1.2rem);
+color:#c00;
+pointer-events:none;
+z-index:800;
+opacity:0.15;
+font-weight:bold;
+text-shadow:0 0 10px #c00;
+animation:peepFade 6s forwards;
+}
+@keyframes peepFade{
+0%{opacity:0}
+10%{opacity:0.15}
+90%{opacity:0.15}
+100%{opacity:0}
+}
+/* Gray overlay */
+.gray-overlay{
+position:fixed;
+inset:0;
+background:rgba(90,90,90,0.3);
+z-index:600;
+display:none;
+}
+.gray-overlay.active{display:block}
+/* Red body */
+body.red-bg{
+background:#d80000 !important;
+}
+body.red-bg .container{opacity:0;transition:opacity .3s}
+/* Micro feedback */
+.micro-feedback{
+position:absolute;
+top:-30px;
+left:50%;
+transform:translateX(-50%);
+background:#c00;
+color:#fff;
+padding:4px 10px;
+font-size:0.8rem;
+white-space:nowrap;
+animation:fadeOut 1.5s forwards;
+z-index:100;
+}
+@keyframes fadeOut{
+0%{opacity:1}
+70%{opacity:1}
+100%{opacity:0}
+}
+/* Diary */
+.diary-screen{
+position:fixed;
+inset:0;
+background:#1a1a1a;
+z-index:3000;
+display:none;
+padding:20px;
+}
+.diary-screen.active{display:block}
+.diary-container{
+max-width:500px;
+margin:20px auto;
+height:calc(100vh - 100px);
+max-height:600px;
+position:relative;
+}
+.diary-page{
+position:absolute;
+width:100%;
+height:100%;
+background:#f5f0e6;
+padding:20px;
+overflow-y:auto;
+font-family:"STKaiti","KaiTi",serif;
+line-height:1.8;
+box-shadow:0 5px 20px rgba(0,0,0,0.5);
+}
+.diary-date{
+text-align:right;
+color:#666;
+font-size:0.85rem;
+margin-bottom:15px;
+font-family:sans-serif;
+}
+.diary-content{
+font-size:clamp(0.9rem,3vw,1rem);
+white-space:pre-wrap;
+word-break:break-all;
+}
+.diary-content .red{color:#c00;}
+.diary-nav{
+display:flex;
+justify-content:space-between;
+margin-top:15px;
+}
+.diary-nav button{
+padding:10px 20px;
+background:#222;
+color:#fff;
+border:none;
+cursor:pointer;
+}
+.diary-nav button:disabled{background:#666;cursor:not-allowed}
+/* Final screen */
+.final-screen{
+position:fixed;
+inset:0;
+background:#000;
+z-index:4000;
+display:none;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+padding:20px;
+}
+.final-screen.active{display:flex}
+.final-text{
+color:#fff;
+font-size:clamp(1.5rem,5vw,2rem);
+margin:10px 0;
+opacity:0;
+animation:fadeInText 1s forwards;
+}
+.final-text.red{color:#c00;}
+.final-text.green{color:#006633;}
+@keyframes fadeInText{
+to{opacity:1}
+}
+.confirm-btn{
+margin-top:30px;
+padding:15px 40px;
+background:#c00;
+color:#fff;
+border:none;
+cursor:pointer;
+font-size:1.1rem;
+display:none;
+}
+.confirm-btn.green{background:#006633;}
+.confirm-btn.show{display:block}
+/* Submit modal */
+.submit-modal input{
+width:100%;
+padding:12px;
+border:2px solid #c00;
+margin:15px 0;
+font-size:1rem;
+text-align:center;
+}
+/* Flash effect */
+.flash{
+animation:flash .1s 3;
+}
+@keyframes flash{
+50%{background:#fff}
+}
+/* Sound hint */
+.sound-hint{
+font-size:0.7rem;
+color:#999;
+text-align:center;
+margin-top:10px;
+}
+</style>
+</head>
+<body>
+<div class="container" id="app">
+<div class="progress" id="progressText">
+第1题 / 共20题
+<div class="progress-bar" id="progressBar" style="width:5%"></div>
+</div>
+<div id="questionContainer"></div>
+<div class="btn-nav" id="btnNav">
+<button id="prevBtn" disabled>上一题</button>
+<button id="nextBtn" disabled>下一题</button>
+</div>
+</div>
+<!-- Start Modal -->
+<div class="modal-overlay active" id="startModal">
+<div class="modal warning-modal">
+<div class="modal-title">⚠️ 重要警告</div>
+<div class="modal-text">
+本问卷基于华东交通大学真实校史改编<br>
+包含强烈的心理恐怖元素<br>
+所有选择都会永久改变剧情走向<br><br>
+<span style="color:#c00">11:30之后请勿独自作答</span>
+</div>
+<button class="modal-btn" id="startBtn">我已知晓并继续</button>
+<div class="sound-hint">建议在安静环境下体验</div>
+</div>
+</div>
+<!-- Black Screen for Terror -->
+<div class="black-screen" id="terrorScreen">
+<div class="terror-text" id="terrorText"></div>
+</div>
+<!-- Gray Overlay -->
+<div class="gray-overlay" id="grayOverlay"></div>
+<!-- Diary Screen -->
+<div class="diary-screen" id="diaryScreen">
+<div class="diary-container">
+<div class="diary-page" id="diaryPage">
+<div class="diary-content" id="diaryContent"></div>
+</div>
+</div>
+<div class="diary-nav">
+<button id="diaryPrev">←</button>
+<button id="diaryNext">→</button>
+<button id="diaryClose">关闭</button>
+</div>
+</div>
+<!-- Final Screen -->
+<div class="final-screen" id="finalScreen">
+<div id="finalText"></div>
+<button class="confirm-btn" id="confirmBtn">确认</button>
+</div>
+<!-- End Modal -->
+<div class="modal-overlay" id="endModal">
+<div class="modal">
+<div class="modal-title" id="endTitle"></div>
+<div class="modal-text" id="endText"></div>
+<button class="modal-btn" id="restartBtn">重新开始</button>
+</div>
+</div>
+
+<script>
+// 等待DOM完全加载后再执行所有代码
+document.addEventListener('DOMContentLoaded', function() {
+    // 核心状态系统
+    let state={
+        currentQ:0,
+        answers:[],
+        isLocked:false,
+        diaryPage:0,
+        wrongAttempts:0,
+        currentEnding:"",
+        // 剧情分支标记
+        foundOldPhoto:false,
+        heardTheWhisper:false,
+        wentToCave:false,
+        helpedHer:false
+    };
+
+    // 完全重写的题目系统
+    const questions=[
+        {
+            id:1,
+            text:"你知道华东交通大学最初是从哪里迁来的吗？",
+            options:[
+                {text:"上海交通大学和同济大学",next:2,effect:()=>{state.helpedHer=true}},
+                {text:"不知道，我是新生",next:2,effect:()=>{}},
+                {text:"不是一直都在南昌吗？",next:2,effect:()=>{state.wrongAttempts++}}
+            ]
+        },
+        {
+            id:2,
+            text:"走进南区大门，你第一眼看到的是什么？",
+            options:[
+                {text:"天佑桥",next:3,effect:()=>{}},
+                {text:"教8栋（日新楼）",next:3,effect:()=>{state.heardTheWhisper=true}},
+                {text:"法桐大道",next:3,effect:()=>{}},
+                {text:"文达湖的黑天鹅",next:3,effect:()=>{}}
+            ]
+        },
+        {
+            id:3,
+            text:"学长告诉你，学校最老的建筑是开山亭，在马鞍山上面。你会——",
+            options:[
+                {text:"找个时间去看看",next:4,effect:()=>{state.wentToCave=true}},
+                {text:"太远了，不去",next:4,effect:()=>{}},
+                {text:"为什么叫开山亭？",next:4,effect:()=>{state.helpedHer=true}},
+                {text:"马鞍山？学校还有山？",next:4,effect:()=>{}}
+            ]
+        },
+        {
+            id:4,
+            text:"有人说，孔目湖不是天然形成的。你觉得是——",
+            options:[
+                {text:"人工挖的水库",next:5,effect:()=>{}},
+                {text:"战争留下的弹坑",next:5,effect:()=>{state.heardTheWhisper=true}},
+                {text:"不知道，没去过",next:5,effect:()=>{}},
+                {text:"别瞎说，就是天然湖",next:5,effect:()=>{state.wrongAttempts++}}
+            ]
+        },
+        {
+            id:5,
+            text:"深夜11:25，你从图书馆出来回北区宿舍，你会选择走——",
+            options:[
+                {text:"天佑桥",next:6,effect:()=>{}},
+                {text:"地下通道",next:6,effect:()=>{state.heardTheWhisper=true}},
+                {text:"地面横穿马路",next:6,effect:()=>{state.wrongAttempts++}},
+                {text:"在图书馆待到天亮",next:7,effect:()=>{state.foundOldPhoto=true}}
+            ]
+        },
+        {
+            id:6,
+            text:"走在路上，你突然听到身后有人叫你的名字，但回头什么都没有。你会——",
+            options:[
+                {text:"加快脚步赶紧走",next:7,effect:()=>{}},
+                {text:"大声问是谁",next:7,effect:()=>{state.heardTheWhisper=true}},
+                {text:"假装没听到继续走",next:7,effect:()=>{}},
+                {text:"回头仔细看",next:8,effect:()=>{state.wrongAttempts++}}
+            ]
+        },
+        {
+            id:7,
+            text:"第二天，你在图书馆三楼靠窗的位置发现了一张泛黄的老照片。照片上是一个穿白衬衫的女生，站在天佑桥上，背后是还没建好的教8栋。你会——",
+            options:[
+                {text:"交给图书馆管理员",next:8,effect:()=>{}},
+                {text:"收起来自己留着",next:8,effect:()=>{state.foundOldPhoto=true;state.helpedHer=true}},
+                {text:"拍个照发朋友圈",next:8,effect:()=>{state.heardTheWhisper=true}},
+                {text:"什么都不做，走开",next:8,effect:()=>{state.wrongAttempts++}}
+            ]
+        },
+        {
+            id:8,
+            text:"从那天起，你总是做同一个梦：一个女生在孔目湖边向你招手，但你永远走不到她身边。你会——",
+            options:[
+                {text:"去孔目湖边看看",next:9,effect:()=>{state.helpedHer=true}},
+                {text:"告诉室友",next:9,effect:()=>{}},
+                {text:"不去想它，过几天就好了",next:9,effect:()=>{state.wrongAttempts++}},
+                {text:"去庙里求个符",next:9,effect:()=>{}}
+            ]
+        },
+        {
+            id:9,
+            text:"你在孔目湖边捡到了一本破旧的日记本，封面写着"1974"。你会——",
+            options:[
+                {text:"翻开看看",next:10,effect:()=>{showDiary();state.isLocked=true}},
+                {text:"交给学校",next:10,effect:()=>{}},
+                {text:"扔回湖里",next:11,effect:()=>{state.wrongAttempts+=2}}
+            ]
+        },
+        {
+            id:10,
+            text:"日记本里写着："今天是我来南昌的第100天，开山亭的地基已经打好了。我把最重要的东西藏在了山洞里，希望以后有人能找到它。" 你会——",
+            options:[
+                {text:"去马鞍山找那个山洞",next:11,effect:()=>{state.wentToCave=true;state.helpedHer=true}},
+                {text:"这是恶作剧吧",next:11,effect:()=>{}},
+                {text:"告诉老师",next:11,effect:()=>{}},
+                {text:"把日记本烧了",next:12,effect:()=>{state.wrongAttempts+=3}}
+            ]
+        },
+        {
+            id:11,
+            text:"深夜，你听到宿舍门外有轻轻的敲门声。透过猫眼，你看到一个穿白衬衫的女生背对着你。你会——",
+            options:[
+                {text:"开门",next:12,effect:()=>{state.helpedHer=true}},
+                {text:"问她是谁",next:12,effect:()=>{}},
+                {text:"假装没人在家",next:12,effect:()=>{state.wrongAttempts++}},
+                {text:"打电话给宿管",next:12,effect:()=>{}}
+            ]
+        },
+        {
+            id:12,
+            text:"第二天，宿管告诉你，昨晚根本没有人敲过你的门。而且——",
+            options:[
+                {text:"你住的这栋楼，1974年是女教师宿舍",next:13,effect:()=>{state.heardTheWhisper=true}},
+                {text:"昨晚监控坏了，什么都没拍到",next:13,effect:()=>{}},
+                {text:"你是不是太累了，出现幻觉了",next:13,effect:()=>{state.wrongAttempts++}},
+                {text:"最近学校里丢了很多东西",next:13,effect:()=>{}}
+            ]
+        },
+        {
+            id:13,
+            text:"你终于鼓起勇气去了马鞍山。在开山亭后面，你真的找到了一个被杂草掩盖的山洞。洞口有一块石碑，上面刻着——",
+            options:[
+                {text:"日新其德，止于至善",next:14,effect:()=>{state.helpedHer=true}},
+                {text:"团结严谨，求实勤奋",next:14,effect:()=>{}},
+                {text:"创业维艰，郁郁松樟作证",next:14,effect:()=>{state.helpedHer=true}},
+                {text:"没有石碑",next:15,effect:()=>{state.wrongAttempts++}}
+            ]
+        },
+        {
+            id:14,
+            text:"走进山洞，你看到了一个落满灰尘的木箱。打开箱子，里面是——",
+            options:[
+                {text:"一沓1974年的教学资料",next:15,effect:()=>{state.helpedHer=true}},
+                {text:"一件白衬衫",next:15,effect:()=>{state.heardTheWhisper=true}},
+                {text:"一本完整的日记",next:15,effect:()=>{showDiary();state.isLocked=true}},
+                {text:"什么都没有",next:16,effect:()=>{state.wrongAttempts+=2}}
+            ]
+        },
+        {
+            id:15,
+            text:"就在这时，你身后传来了一个温柔的女声："你终于来了。" 你会——",
+            options:[
+                {text:"回头看她",next:16,effect:()=>{state.helpedHer=true}},
+                {text:"跑出山洞",next:16,effect:()=>{state.wrongAttempts++}},
+                {text:"问她是谁",next:16,effect:()=>{}},
+                {text:"站在原地不动",next:16,effect:()=>{}}
+            ]
+        },
+        {
+            id:16,
+            text:"她告诉你，她叫林慧，是1974年第一批来华交的上海老师。当年为了保护学校的建校资料，在山洞里遇到了塌方，再也没有出来。她的愿望是——",
+            options:[
+                {text:"把资料交给学校",next:17,effect:()=>{state.helpedHer=true}},
+                {text:"再看一眼天佑桥",next:17,effect:()=>{state.helpedHer=true}},
+                {text:"告诉后人当年的故事",next:17,effect:()=>{state.helpedHer=true}},
+                {text:"永远留在这里",next:18,effect:()=>{state.wrongAttempts+=3}}
+            ]
+        },
+        {
+            id:17,
+            text:"你答应了她的请求。她对你笑了笑，然后慢慢变得透明。在她消失的最后一刻，她说——",
+            options:[
+                {text:"谢谢你，花椒欢迎你",next:19,effect:()=>{state.currentEnding="good"}},
+                {text:"日新其德，止于至善",next:19,effect:()=>{state.currentEnding="good"}},
+                {text:"好好照顾我的学校",next:19,effect:()=>{state.currentEnding="good"}},
+                {text:"留下来陪我吧",next:19,effect:()=>{state.currentEnding="bad"}}
+            ]
+        },
+        {
+            id:18,
+            text:"你拒绝了她的请求。她的笑容消失了，山洞里的温度瞬间降到了冰点。她冷冷地说——",
+            options:[
+                {text:"那你就永远留下来陪我吧",next:19,effect:()=>{state.currentEnding="bad"}},
+                {text:"你会后悔的",next:19,effect:()=>{state.currentEnding="bad"}},
+                {text:"既然你不愿意，那就让别人来",next:19,effect:()=>{state.currentEnding="bad"}},
+                {text:"我等了50年，你居然拒绝我",next:19,effect:()=>{state.currentEnding="bad"}}
+            ]
+        },
+        {
+            id:19,
+            text:"当你走出山洞时，天已经亮了。你回头看了一眼，开山亭在晨光中显得格外庄严。你知道——",
+            options:[
+                {text:"华交的历史，由我们来传承",next:20,effect:()=>{}},
+                {text:"有些故事，永远不会被遗忘",next:20,effect:()=>{}},
+                {text:"我会永远记住林老师",next:20,effect:()=>{}},
+                {text:"终于结束了",next:20,effect:()=>{}}
+            ]
+        },
+        {
+            id:20,
+            text:"最后一个问题：你愿意把这个故事告诉更多的花椒人吗？",
+            options:[
+                {text:"愿意",next:-1,effect:()=>{if(state.currentEnding!=="bad")state.currentEnding="true"}},
+                {text:"不愿意",next:-1,effect:()=>{if(state.currentEnding!=="bad")state.currentEnding="hidden"}}
+            ]
+        }
+    ];
+
+    // 日记内容（真实校史改编）
+    const diaryContents=[
+`1974年3月12日 阴
+今天终于到南昌了。
+从上海坐了三天三夜的火车，又坐了两个小时的卡车，才到这个叫马鞍山的地方。
+到处都是荒草和泥巴，连一条像样的路都没有。
+校长说，我们要在这里建一所大学，一所属于中国铁路的大学。
+我被分配教数学，住在临时搭的草棚里。
+晚上能听到狼叫，有点害怕。
+但想到以后会有千千万万的学生在这里读书，就觉得一切都值得。`,
+`1974年5月1日 晴
+开山亭的地基打好了。
+我们65个人，用锄头和铁锹，在荒山上开出了第一片平地。
+手上磨出了血泡，肩膀也肿了，但没有人抱怨。
+校长在地基里埋了一块石碑，上面刻着"创业维艰，郁郁松樟作证"。
+他说，以后的学生看到这块石碑，就会知道我们当年有多不容易。
+今天我在天佑桥的位置种了一棵法桐树。
+希望等它长大的时候，学校已经建好了。`,
+`1974年7月15日 雨
+下大雨了，山洪暴发了。
+我们存的资料都被淋湿了。
+这些都是从上海带来的珍贵教材，是学校的命根子。
+我和几个老师把资料搬到了后山的山洞里。
+山洞很干燥，应该能保住这些资料。
+雨下得太大了，山路很滑。
+明天我再去看看，把资料整理一下。
+希望明天是个晴天。`,
+`（最后一页没有日期，字迹潦草）
+山洞塌了...
+我出不去了...
+资料还在我身边...
+它们不能被毁掉...
+如果有人看到这本日记...
+请把资料交给学校...
+告诉他们...
+我们没有白来...
+日新其德...
+止于至善...
+我爱这所学校...`
+    ];
+    const diaryDates=["1974.03.12","1974.05.01","1974.07.15",""];
+
+    // 所有按钮事件绑定（现在100%有效）
+    document.getElementById('startBtn').addEventListener('click', startStep);
+    document.getElementById('prevBtn').addEventListener('click', goToPrev);
+    document.getElementById('nextBtn').addEventListener('click', goToNext);
+    document.getElementById('diaryPrev').addEventListener('click', prevDiaryPage);
+    document.getElementById('diaryNext').addEventListener('click', nextDiaryPage);
+    document.getElementById('diaryClose').addEventListener('click', closeDiary);
+    document.getElementById('confirmBtn').addEventListener('click', showEndModal);
+    document.getElementById('restartBtn').addEventListener('click', restartQuiz);
+
+    // 开始函数
+    function startStep(){
+        document.getElementById('startModal').classList.remove('active');
+        renderQuestion();
+    }
+
+    // 渲染题目
+    function renderQuestion(){
+        const container=document.getElementById('questionContainer');
+        const q=questions[state.currentQ];
+        document.getElementById('progressText').innerHTML=`
+        第${state.currentQ+1}题 / 共20题
+        <div class="progress-bar" style="width:${(state.currentQ+1)/20*100}%"></div>
+        `;
+        container.innerHTML=`
+        <div class="question-container active">
+        <div class="question-text">${q.text}</div>
+        <ul class="options">
+        ${q.options.map((opt,i)=>`
+        <li data-index="${i}">${opt.text}</li>
+        `).join('')}
+        </ul>
+        </div>
+        `;
+
+        // 为每个选项绑定点击事件
+        const options=document.querySelectorAll('.options li');
+        options.forEach((el,index)=>{
+            el.addEventListener('click', ()=>selectOption(index, el));
+        });
+
+        // 更新按钮状态
+        document.getElementById('prevBtn').disabled=(state.currentQ===0);
+        document.getElementById('nextBtn').disabled=true;
+
+        // 特殊剧情触发
+        if(state.currentQ===5 && state.heardTheWhisper){
+            setTimeout(triggerWhisperEffect, 1000);
+        }
+        if(state.currentQ===10 && state.foundOldPhoto){
+            setTimeout(triggerPhotoEffect, 1000);
+        }
+        if(state.currentQ===15 && state.wentToCave){
+            setTimeout(triggerCaveEffect, 500);
+        }
+    }
+
+    // 特殊特效
+    function triggerWhisperEffect(){
+        document.body.classList.add('red-bg');
+        setTimeout(()=>{
+            document.body.classList.remove('red-bg');
+        }, 500);
+    }
+
+    function triggerPhotoEffect(){
+        document.body.classList.add('flash');
+        setTimeout(()=>{
+            document.body.classList.remove('flash');
+            showMicroFeedback("她在看着你", document.querySelector('.options li.selected'));
+        }, 300);
+    }
+
+    function triggerCaveEffect(){
+        const overlay=document.getElementById('grayOverlay');
+        overlay.classList.add('active');
+        for(let i=0;i<20;i++){
+            setTimeout(()=>{
+                createPeepText("她在等你");
+            }, i*100);
+        }
+        setTimeout(()=>{
+            overlay.classList.remove('active');
+        }, 3000);
+    }
+
+    // 选择选项
+    function selectOption(index, el){
+        if(state.isLocked)return;
+        const options=document.querySelectorAll('.options li');
+        options.forEach(o=>o.classList.remove('selected'));
+        el.classList.add('selected');
+        state.answers[state.currentQ]=index;
+
+        // 执行选项效果
+        const opt=questions[state.currentQ].options[index];
+        opt.effect();
+
+        // Show micro feedback
+        showMicroFeedback("...", el);
+
+        // 选项消失效果（随机）
+        if(Math.random()<0.2 && state.currentQ>10){
+            const randomOption=options[Math.floor(Math.random()*options.length)];
+            if(!randomOption.classList.contains('selected')){
+                randomOption.classList.add('disappear');
+            }
+        }
+
+        // 启用下一题按钮
+        document.getElementById('nextBtn').disabled=false;
+    }
+
+    // Micro feedback
+    function showMicroFeedback(text, el){
+        const fb=document.createElement('div');
+        fb.className='micro-feedback';
+        fb.textContent=text;
+        el.style.position='relative';
+        el.appendChild(fb);
+        setTimeout(()=>fb.remove(), 1500);
+    }
+
+    function createPeepText(text){
+        const el=document.createElement('div');
+        el.className='peep-text';
+        el.textContent=text;
+        el.style.left=Math.random()*90+5+'%';
+        el.style.top=Math.random()*90+5+'%';
+        document.body.appendChild(el);
+        setTimeout(()=>el.remove(), 6000);
+    }
+
+    // 导航函数
+    function goToPrev(){
+        if(state.currentQ>0){
+            state.currentQ--;
+            renderQuestion();
+        }
+    }
+
+    function goToNext(){
+        const opt=questions[state.currentQ].options[state.answers[state.currentQ]];
+        if(opt.next===-1){
+            // 结束
+            showFinalScreen();
+        }else{
+            state.currentQ=opt.next;
+            renderQuestion();
+        }
+    }
+
+    // 日记函数
+    function showDiary(){
+        document.getElementById('diaryScreen').classList.add('active');
+        state.diaryPage=0;
+        updateDiary();
+    }
+
+    function updateDiary(){
+        const content=document.getElementById('diaryContent');
+        const date=diaryDates[state.diaryPage];
+        content.innerHTML=(date?`<div class="diary-date">${date}</div>`:'')+diaryContents[state.diaryPage];
+        document.getElementById('diaryPrev').disabled=(state.diaryPage===0);
+        document.getElementById('diaryNext').disabled=(state.diaryPage===3);
+    }
+
+    function prevDiaryPage(){
+        if(state.diaryPage>0){
+            state.diaryPage--;
+            updateDiary();
+        }
+    }
+
+    function nextDiaryPage(){
+        if(state.diaryPage<3){
+            state.diaryPage++;
+            updateDiary();
+        }
+    }
+
+    function closeDiary(){
+        document.getElementById('diaryScreen').classList.remove('active');
+        state.isLocked=false;
+        document.getElementById('nextBtn').disabled=false;
+    }
+
+    // 最终屏幕
+    function showFinalScreen(){
+        const screen=document.getElementById('finalScreen');
+        const textContainer=document.getElementById('finalText');
+        const confirmBtn=document.getElementById('confirmBtn');
+        textContainer.innerHTML='';
+        confirmBtn.className='confirm-btn';
+
+        // 结局判定
+        if(state.wrongAttempts>=5 || state.currentEnding==="bad"){
+            // 恐怖结局
+            const finalTexts=["你没能离开山洞","她抓住了你的手","你成为了新的守护者","永远留在了1974年的夏天"];
+            finalTexts.forEach((t,i)=>{
+                const span=document.createElement('div');
+                span.className='final-text red';
+                span.textContent=t;
+                span.style.animationDelay=(i*1.5)+'s';
+                textContainer.appendChild(span);
+            });
+            confirmBtn.classList.add('red');
+            confirmBtn.textContent='接受';
+            state.currentEnding="bad";
+        }else if(state.helpedHer && state.currentEnding==="true"){
+            // 感动结局
+            const finalTexts=["林老师终于安息了","她的故事被永远铭记","开山亭的松树又长高了","花椒永远欢迎你"];
+            finalTexts.forEach((t,i)=>{
+                const span=document.createElement('div');
+                span.className='final-text green';
+                span.textContent=t;
+                span.style.animationDelay=(i*1.5)+'s';
+                textContainer.appendChild(span);
+            });
+            confirmBtn.classList.add('green');
+            confirmBtn.textContent='传承';
+            state.currentEnding="good";
+        }else{
+            // 隐藏结局
+            const finalTexts=["你走出了山洞","但什么都没有改变","林老师还在等","等下一个愿意听她故事的人"];
+            finalTexts.forEach((t,i)=>{
+                const span=document.createElement('div');
+                span.className='final-text';
+                span.textContent=t;
+                span.style.animationDelay=(i*1.5)+'s';
+                textContainer.appendChild(span);
+            });
+            confirmBtn.style.background='#666';
+            confirmBtn.textContent='离开';
+            state.currentEnding="hidden";
+        }
+
+        screen.classList.add('active');
+        setTimeout(()=>{
+            confirmBtn.classList.add('show');
+        }, 6500);
+    }
+
+    function showEndModal(){
+        document.getElementById('finalScreen').classList.remove('active');
+        document.getElementById('endModal').classList.add('active');
+        const endTitle=document.getElementById('endTitle');
+        const endText=document.getElementById('endText');
+
+        if(state.currentEnding==="good"){
+            endTitle.textContent="结局一：薪火相传";
+            endText.innerHTML=`
+            1974年，65位前辈从上海来到南昌<br>
+            在荒山上建起了华东交通大学<br>
+            林慧老师是其中之一<br>
+            她把生命献给了这所学校<br><br>
+            50年来，她一直守护着这里<br>
+            守护着每一个花椒人<br><br>
+            <span style="color:#006633">日新其德，止于至善</span><br>
+            这是她留给我们最后的话<br><br>
+            ✨ 花椒在等你 ✨
+            `;
+        }else if(state.currentEnding==="bad"){
+            endTitle.textContent="结局二：永恒守护";
+            endText.innerHTML=`
+            你没能完成她的心愿<br>
+            她把你永远留在了山洞里<br>
+            从此，你成为了新的守护者<br>
+            和她一起，永远守护着这所学校<br><br>
+            开山亭的石碑上<br>
+            又多了一个名字<br><br>
+            ⚠️ 花椒在等你 ⚠️
+            `;
+        }else{
+            endTitle.textContent="结局三：擦肩而过";
+            endText.innerHTML=`
+            你走出了山洞<br>
+            但什么都没有改变<br>
+            林老师还在等<br>
+            等下一个愿意听她故事的人<br><br>
+            也许有一天<br>
+            会有人完成她的心愿<br><br>
+            🌙 花椒在等你 🌙
+            `;
+        }
+    }
+
+    function restartQuiz(){
+        // 重置所有状态
+        state={
+            currentQ:0,
+            answers:[],
+            isLocked:false,
+            diaryPage:0,
+            wrongAttempts:0,
+            currentEnding:"",
+            foundOldPhoto:false,
+            heardTheWhisper:false,
+            wentToCave:false,
+            helpedHer:false
+        };
+        document.getElementById('endModal').classList.remove('active');
+        document.getElementById('startModal').classList.add('active');
+        renderQuestion();
+    }
+
+    // 初始渲染
+    renderQuestion();
+});
+</script>
+</body>
+</html>
