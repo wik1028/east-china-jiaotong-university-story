@@ -80,12 +80,6 @@ transition:all .2s;
 opacity:0.3;
 cursor:not-allowed;
 }
-.btn-nav button.danger{
-background:#c00;
-border-color:#c00;
-color:#fff;
-}
-.btn-nav button.danger:hover{background:#900;border-color:#900}
 .progress{
 text-align:center;
 font-size:clamp(0.8rem,2.5vw,0.9rem);
@@ -135,10 +129,6 @@ cursor:pointer;
 font-size:clamp(0.9rem,3vw,1rem);
 }
 .modal-btn:hover{background:#444}
-.modal-btn.gray{
-background:#999;
-cursor:not-allowed;
-}
 .warning-modal{
 border:3px solid #c00;
 animation:pulse 0.5s infinite alternate;
@@ -251,7 +241,6 @@ font-size:clamp(0.9rem,3vw,1rem);
 white-space:pre-wrap;
 word-break:break-all;
 }
-.diary-content .red{color:#c00;}
 .diary-nav{
 display:flex;
 justify-content:space-between;
@@ -286,6 +275,7 @@ animation:fadeInText 1s forwards;
 }
 .final-text.red{color:#c00;}
 .final-text.green{color:#006633;}
+.final-text.gold{color:#d4a017;}
 @keyframes fadeInText{
 to{opacity:1}
 }
@@ -300,10 +290,9 @@ font-size:1.1rem;
 display:none;
 }
 .confirm-btn.green{background:#006633;}
+.confirm-btn.gold{background:#d4a017;}
 .confirm-btn.show{display:block}
-.flash{
-animation:flash .1s 3;
-}
+.flash{animation:flash .1s 3;}
 @keyframes flash{
 50%{background:#fff}
 }
@@ -313,13 +302,32 @@ color:#999;
 text-align:center;
 margin-top:10px;
 }
+.story-log{
+position:fixed;
+bottom:20px;
+left:50%;
+transform:translateX(-50%);
+background:rgba(0,0,0,0.8);
+color:#c00;
+padding:8px 16px;
+font-size:0.85rem;
+z-index:500;
+display:none;
+animation:storyFade 3s forwards;
+}
+@keyframes storyFade{
+0%{opacity:0;transform:translateX(-50%) translateY(10px)}
+15%{opacity:1;transform:translateX(-50%) translateY(0)}
+85%{opacity:1;transform:translateX(-50%) translateY(0)}
+100%{opacity:0;transform:translateX(-50%) translateY(-10px)}
+}
 </style>
 </head>
 <body>
 <div class="container" id="app">
 <div class="progress" id="progressText">
-第1题 / 共20题
-<div class="progress-bar" id="progressBar" style="width:5%"></div>
+第1题 / 共28题
+<div class="progress-bar" id="progressBar" style="width:3.5%"></div>
 </div>
 <div id="questionContainer"></div>
 <div class="btn-nav" id="btnNav">
@@ -333,11 +341,13 @@ margin-top:10px;
 <div class="modal-text">
 本问卷基于华东交通大学真实校史改编<br>
 包含强烈的心理恐怖元素<br>
-所有选择都会永久改变剧情走向<br><br>
-<span style="color:#c00">11:30之后请勿独自作答</span>
+每一个选择都会永久改变剧情走向<br>
+没有回头路<br><br>
+<span style="color:#c00">深夜11:30之后请勿独自作答</span><br>
+<span style="color:#666;font-size:0.8rem">你只有一次机会</span>
 </div>
 <button class="modal-btn" id="startBtn">我已知晓并继续</button>
-<div class="sound-hint">建议在安静环境下体验</div>
+<div class="sound-hint">戴上耳机，体验更佳</div>
 </div>
 </div>
 <div class="black-screen" id="terrorScreen">
@@ -351,9 +361,9 @@ margin-top:10px;
 </div>
 </div>
 <div class="diary-nav">
-<button id="diaryPrev">←</button>
-<button id="diaryNext">→</button>
-<button id="diaryClose">关闭</button>
+<button id="diaryPrev">← 上一页</button>
+<button id="diaryNext">下一页 →</button>
+<button id="diaryClose">关闭日记</button>
 </div>
 </div>
 <div class="final-screen" id="finalScreen">
@@ -367,6 +377,7 @@ margin-top:10px;
 <button class="modal-btn" id="restartBtn">重新开始</button>
 </div>
 </div>
+<div class="story-log" id="storyLog"></div>
 
 <script>
 const Game = {
@@ -380,204 +391,321 @@ const Game = {
         foundOldPhoto: false,
         heardTheWhisper: false,
         wentToCave: false,
-        helpedHer: false
+        helpedHer: false,
+        courage: 0,
+        memories: 0,
+        readDiary: false,
+        foundTheTruth: false,
+        metHerBefore: false
     },
 
     questions: [
         {
             id:1,
-            text:"你知道华东交通大学最初是从哪里迁来的吗？",
+            text:"九月的南昌，闷热潮湿。你拖着重重的行李箱，第一次踏进华东交通大学的南门。法桐大道的树叶在风中沙沙作响，一个满头白发的老保安从值班室里探出头来，递给你一本泛黄的新生手册。手册的最后一页被撕掉了半张，残留的字迹歪歪扭扭地写着：\"请务必在入学第一周内找到开山……\" —— 后面的字被大片墨水晕开，完全看不清了。你会——",
             options:[
-                {text:"上海交通大学和同济大学",next:2,effect:()=>{Game.state.helpedHer=true}},
-                {text:"不知道，我是新生",next:2,effect:()=>{}},
-                {text:"不是一直都在南昌吗？",next:2,effect:()=>{Game.state.wrongAttempts++}}
+                {text:"礼貌地问保安：\"爷爷，这后面写的是什么？\"",next:2,effect:()=>{Game.state.courage++;Game.showStoryLog("保安的眼神闪烁了一下，但他什么都没说")}},
+                {text:"把手册仔细收好，先去宿舍安顿下来再说",next:2,effect:()=>{}},
+                {text:"翻到手册前面，一页一页仔细阅读",next:2,effect:()=>{Game.state.foundOldPhoto=true;Game.state.memories++;Game.showStoryLog("手册里夹着一张黑白照片，照片上是一个穿白衬衫的女生")}},
+                {text:"觉得这只是吓唬新生的恶作剧，随手扔进垃圾桶",next:2,effect:()=>{Game.state.wrongAttempts++;Game.showStoryLog("垃圾桶里传来一声很轻的叹息")}},
+                {text:"拍张照片发到新生群里，问问大家这是什么意思",next:2,effect:()=>{Game.state.heardTheWhisper=true;Game.showStoryLog("群里没有一个人回复你")}}
             ]
         },
         {
             id:2,
-            text:"走进南区大门，你第一眼看到的是什么？",
+            text:"你被分配到北区33栋宿舍楼。推开门的瞬间，一股陈旧的樟脑味扑面而来。你的室友们还没到，房间里只有你一个人。靠窗的桌子上放着一面用红布盖着的镜子。红布上绣着两个字：\"勿揭\"。窗外，天佑桥上的路灯在暮色中一盏一盏地亮起来。你会——",
             options:[
-                {text:"天佑桥",next:3,effect:()=>{}},
-                {text:"教8栋（日新楼）",next:3,effect:()=>{Game.state.heardTheWhisper=true}},
-                {text:"法桐大道",next:3,effect:()=>{}},
-                {text:"文达湖的黑天鹅",next:3,effect:()=>{}}
+                {text:"好奇地揭开红布，看看镜子",next:3,effect:()=>{Game.state.heardTheWhisper=true;Game.state.courage++;Game.showStoryLog("镜子里映出的不是你的脸，而是一个模糊的白色人影")}},
+                {text:"尊重前人的警告，不去碰它",next:3,effect:()=>{Game.state.memories++;Game.showStoryLog("你隐约觉得，那个红布在微微发光")}},
+                {text:"把红布和镜子一起收进抽屉里",next:3,effect:()=>{}},
+                {text:"打电话给宿管，问这面镜子是怎么回事",next:3,effect:()=>{Game.state.helpedHer=true;Game.showStoryLog("宿管沉默了很久，说：\"那是上一届留下的，别碰。\"")}},
+                {text:"觉得晦气，打开窗户让新鲜空气进来",next:3,effect:()=>{Game.state.wrongAttempts++}}
             ]
         },
         {
             id:3,
-            text:"学长告诉你，学校最老的建筑是开山亭，在马鞍山上面。你会——",
+            text:"晚饭后你在校园里散步，不知不觉走到了孔目湖。湖面平静得像一面黑色的镜子。一个穿着旧式白衬衫的女生独自坐在湖边的长椅上，手里捧着一本厚厚的书。她抬起头看了你一眼，眼神温柔却带着说不出的悲伤。她轻声问你：\"你是新生吧？你觉得这所学校……漂亮吗？\" 你会——",
             options:[
-                {text:"找个时间去看看",next:4,effect:()=>{Game.state.wentToCave=true}},
-                {text:"太远了，不去",next:4,effect:()=>{}},
-                {text:"为什么叫开山亭？",next:4,effect:()=>{Game.state.helpedHer=true}},
-                {text:"马鞍山？学校还有山？",next:4,effect:()=>{}}
+                {text:"\"很漂亮，特别是这个湖。你也是新生吗？\"",next:4,effect:()=>{Game.state.helpedHer=true;Game.state.metHerBefore=true;Game.showStoryLog("她微微笑了，但眼角有泪光")}},
+                {text:"\"还不错。你在看什么书？\"",next:4,effect:()=>{Game.state.courage++;Game.showStoryLog("她把书合上了——封面上写着《1974年华交建校纪事》")}},
+                {text:"点点头但没有停下脚步，继续往前走",next:4,effect:()=>{}},
+                {text:"\"你是哪个学院的？这么晚了一个人在湖边不安全\"",next:4,effect:()=>{Game.state.memories++;Game.showStoryLog("她轻声说：\"我一直在等一个人\"")}},
+                {text:"假装没听到，加快脚步离开",next:4,effect:()=>{Game.state.wrongAttempts++;Game.showStoryLog("走出很远后回头，长椅已经空了")}}
             ]
         },
         {
             id:4,
-            text:"有人说，孔目湖不是天然形成的。你觉得是——",
+            text:"开学第三天，你在教8栋（日新楼）上完第一节课。下楼的时候，你在三楼的楼梯拐角处看到了一面老旧的公告栏，上面贴满了泛黄的剪报。其中一张1974年的《江西日报》剪报格外显眼，标题是：\"上海六十五名教师赴赣援建——马鞍山下新大学奠基\"。报道旁边还附了一张黑白合影，照片里的人们站在荒草丛中，背后是一块刚刚立起的石碑。你会——",
             options:[
-                {text:"人工挖的水库",next:5,effect:()=>{}},
-                {text:"战争留下的弹坑",next:5,effect:()=>{Game.state.heardTheWhisper=true}},
-                {text:"不知道，没去过",next:5,effect:()=>{}},
-                {text:"别瞎说，就是天然湖",next:5,effect:()=>{Game.state.wrongAttempts++}}
+                {text:"凑近仔细看照片里每一个人的脸",next:5,effect:()=>{Game.state.foundOldPhoto=true;Game.state.memories++;Game.showStoryLog("照片里最后一排，有一个女生的轮廓和湖边那个人一模一样")}},
+                {text:"用手机把剪报拍下来保存",next:5,effect:()=>{Game.state.courage++;}},
+                {text:"看看就走，没什么特别的",next:5,effect:()=>{}},
+                {text:"撕下那张剪报带走",next:5,effect:()=>{Game.state.wrongAttempts++;Game.state.helpedHer=true;Game.showStoryLog("剪报背后用铅笔写着：\"林慧，1974.7.15\"")}},
+                {text:"找管理员问问这张剪报的来源",next:5,effect:()=>{Game.state.memories++;Game.showStoryLog("管理员说：\"那个公告栏已经锁了二十多年了，你怎么打开的？\"")}}
             ]
         },
         {
             id:5,
-            text:"深夜11:25，你从图书馆出来回北区宿舍，你会选择走——",
+            text:"室友老王是个本地人，他对学校的历史了如指掌。晚上熄灯后，他压低声音告诉你：\"你知道吗，马鞍山上的开山亭，是1974年建校时第一批老师亲手挖出来的地基。但后来出了一件怪事——有个女老师在暴雨天去山洞里抢救资料，再也没出来。有人说她的魂还留在山上，每年新生入学那几天，孔目湖的水会莫名其妙地变浑。\" 你会——",
             options:[
-                {text:"天佑桥",next:6,effect:()=>{}},
-                {text:"地下通道",next:6,effect:()=>{Game.state.heardTheWhisper=true}},
-                {text:"地面横穿马路",next:6,effect:()=>{Game.state.wrongAttempts++}},
-                {text:"在图书馆待到天亮",next:7,effect:()=>{Game.state.foundOldPhoto=true}}
+                {text:"\"那后来有人去找过她吗？\"",next:6,effect:()=>{Game.state.helpedHer=true;Game.state.courage++;Game.showStoryLog("老王摇摇头：\"找了三天三夜，只找到一本被泥水浸透的日记\"")}},
+                {text:"\"别吓唬人了，这种校园传说每个学校都有\"",next:6,effect:()=>{Game.state.wrongAttempts++;}},
+                {text:"\"马鞍山怎么走？我想去看看开山亭\"",next:6,effect:()=>{Game.state.wentToCave=true;Game.state.courage+=2;Game.showStoryLog("老王瞪大了眼睛：\"你疯了吧？现在是晚上！\"")}},
+                {text:"默默记在心里，什么也不说",next:6,effect:()=>{}},
+                {text:"\"那本日记现在在哪里？\"",next:6,effect:()=>{Game.state.memories++;Game.state.readDiary=true;Game.showStoryLog("老王说：\"听说被收在图书馆的特藏室，但一般人借不到\"")}}
             ]
         },
         {
             id:6,
-            text:"走在路上，你突然听到身后有人叫你的名字，但回头什么都没有。你会——",
+            text:"深夜十一点二十分，你在图书馆自习到闭馆。从图书馆回北区宿舍有两条路：走天佑桥，宽阔明亮但绕远；走地下通道，近但灯光昏暗，墙壁上满是斑驳的涂鸦。通道入口处贴着一张褪色的告示：\"夜间请结伴通行\"。冷风从通道里呼呼地吹出来，带着一股潮湿的泥土味。你会——",
             options:[
-                {text:"加快脚步赶紧走",next:7,effect:()=>{}},
-                {text:"大声问是谁",next:7,effect:()=>{Game.state.heardTheWhisper=true}},
-                {text:"假装没听到继续走",next:7,effect:()=>{}},
-                {text:"回头仔细看",next:8,effect:()=>{Game.state.wrongAttempts++}}
+                {text:"走天佑桥，虽然远但安全",next:7,effect:()=>{}},
+                {text:"走地下通道，抄近路回去",next:7,effect:()=>{Game.state.heardTheWhisper=true;Game.state.courage++;Game.showStoryLog("通道里回荡着你的脚步声——但你明明穿着软底运动鞋")}},
+                {text:"在图书馆门口等一下，看有没有人一起走",next:7,effect:()=>{Game.state.memories++;}},
+                {text:"打电话给室友让他来接你",next:7,effect:()=>{Game.state.helpedHer=true;Game.showStoryLog("电话接通了，但对面只有沙沙的杂音")}},
+                {text:"不回去了，在图书馆通宵自习",next:8,effect:()=>{Game.state.foundOldPhoto=true;Game.showStoryLog("凌晨三点，你发现书架上有一本没有编号的旧书")}}
             ]
         },
         {
             id:7,
-            text:"第二天，你在图书馆三楼靠窗的位置发现了一张泛黄的老照片。照片上是一个穿白衬衫的女生，站在天佑桥上，背后是还没建好的教8栋。你会——",
+            text:"走在路上，周围的空气突然变得冰冷。你听到身后有人轻轻地叫了一声你的名字——不是全名，而是只有家人才知道的小名。那声音温柔而熟悉，像妈妈在叫你回家吃饭。你猛地回头，路灯下空无一人，只有一只黑色的鸟从天佑桥上掠过。你的手机屏幕自动亮了，显示的时间是 23:23。你会——",
             options:[
-                {text:"交给图书馆管理员",next:8,effect:()=>{}},
-                {text:"收起来自己留着",next:8,effect:()=>{Game.state.foundOldPhoto=true;Game.state.helpedHer=true}},
-                {text:"拍个照发朋友圈",next:8,effect:()=>{Game.state.heardTheWhisper=true}},
-                {text:"什么都不做，走开",next:8,effect:()=>{Game.state.wrongAttempts++}}
+                {text:"大声问：\"谁在那里？\"",next:8,effect:()=>{Game.state.courage++;Game.showStoryLog("回答你的只有风吹树叶的沙沙声")}},
+                {text:"加快脚步，几乎是用跑的冲回宿舍",next:8,effect:()=>{Game.state.heardTheWhisper=true;}},
+                {text:"站在原地，拿出手机打开手电筒照向四周",next:8,effect:()=>{Game.state.courage++;Game.state.memories++;Game.showStoryLog("手电筒的光束在空气中照出了一片漂浮的灰尘——形状像一个站着的人")}},
+                {text:"假装什么都没发生，继续慢慢走",next:8,effect:()=>{}},
+                {text:"转身往回走，想找出声音的来源",next:9,effect:()=>{Game.state.wrongAttempts++;Game.state.courage+=2;Game.showStoryLog("你发现地上有一串湿漉漉的脚印，一直延伸到湖边")}}
             ]
         },
         {
             id:8,
-            text:"从那天起，你总是做同一个梦：一个女生在孔目湖边向你招手，但你永远走不到她身边。你会——",
+            text:"第二天早上，你在图书馆三楼靠窗的位置发现了一张夹在书里的老照片。照片已经严重泛黄，但依然能看清：一个穿白衬衫的年轻女生，站在还没完工的天佑桥上，身后是正在建设中的教8栋。她的笑容灿烂而真诚，手里举着一块木牌，上面写着：\"华交，我们来了——1974.5.1\"。照片背面有一行娟秀的钢笔字：\"如果你看到这张照片，请来孔目湖找我。\" 你会——",
             options:[
-                {text:"去孔目湖边看看",next:9,effect:()=>{Game.state.helpedHer=true}},
-                {text:"告诉室友",next:9,effect:()=>{}},
-                {text:"不去想它，过几天就好了",next:9,effect:()=>{Game.state.wrongAttempts++}},
-                {text:"去庙里求个符",next:9,effect:()=>{}}
+                {text:"把照片小心地夹回书里，然后去孔目湖",next:9,effect:()=>{Game.state.foundOldPhoto=true;Game.state.helpedHer=true;Game.state.courage++;Game.showStoryLog("你有一种强烈的预感——她就是湖边那个女生")}},
+                {text:"去图书馆服务台询问这本书是谁还的",next:9,effect:()=>{Game.state.memories++;Game.showStoryLog("管理员查了记录：\"这本书上一次被借出是1999年\"")}},
+                {text:"把照片收好，打算以后再研究",next:9,effect:()=>{Game.state.foundOldPhoto=true;}},
+                {text:"觉得太诡异了，把照片放回去快步离开",next:9,effect:()=>{Game.state.wrongAttempts++;}},
+                {text:"用手机拍下照片，发到校园论坛上问有没有人认识她",next:9,effect:()=>{Game.state.heardTheWhisper=true;Game.showStoryLog("帖子发出去后，你的账号被禁言了")}}
             ]
         },
         {
             id:9,
-            text:"你在孔目湖边捡到了一本破旧的日记本，封面写着\"1974\"。你会——",
+            text:"从那天晚上开始，你反复做同一个梦。梦里你站在孔目湖边，湖面上升起了浓雾。雾中有一个模糊的白色身影，向你伸出手。她的嘴唇在动，但你听不到任何声音。每次你想要靠近，脚下的路就会变得越来越长，她永远在你触不到的距离。梦醒的时候，你的枕头总是湿的。室友说，你晚上会说梦话，一直在重复一个名字。你会——",
             options:[
-                {text:"翻开看看",next:10,effect:()=>{Game.showDiary();Game.state.isLocked=true}},
-                {text:"交给学校",next:10,effect:()=>{}},
-                {text:"扔回湖里",next:11,effect:()=>{Game.state.wrongAttempts+=2}}
+                {text:"去孔目湖边，在梦里的那个位置等她",next:10,effect:()=>{Game.state.helpedHer=true;Game.state.courage++;Game.showStoryLog("湖边有一只蝴蝶落在你的肩头，翅膀是白色的")}},
+                {text:"告诉室友你做的是什么梦",next:10,effect:()=>{Game.state.memories++;Game.showStoryLog("室友的脸突然白了：\"你说的那个名字……是林慧？\"")}},
+                {text:"去学校档案室查1974年的教职工名单",next:10,effect:()=>{Game.state.foundTheTruth=true;Game.state.memories++;}},
+                {text:"不去想它，觉得只是最近压力太大了",next:10,effect:()=>{Game.state.wrongAttempts++;}},
+                {text:"在床边放一杯水和一把剪刀（老家辟邪的方法）",next:10,effect:()=>{}}
             ]
         },
         {
             id:10,
-            text:"日记本里写着：\"今天是我来南昌的第100天，开山亭的地基已经打好了。我把最重要的东西藏在了山洞里，希望以后有人能找到它。\" 你会——",
+            text:"你又一次去了孔目湖。这一次，你在长椅下面发现了一个被泥巴半掩着的铁盒子。盒子锈迹斑斑，但锁扣已经坏了。打开盒子，里面是一本用油纸仔细包裹的日记本，封面用毛笔写着\"1974\"三个字，字迹已经被水渍洇开。日记的第一页写着：\"林慧，华东交通大学数学教研组，1974年3月12日抵赣。\" 你会——",
             options:[
-                {text:"去马鞍山找那个山洞",next:11,effect:()=>{Game.state.wentToCave=true;Game.state.helpedHer=true}},
-                {text:"这是恶作剧吧",next:11,effect:()=>{}},
-                {text:"告诉老师",next:11,effect:()=>{}},
-                {text:"把日记本烧了",next:12,effect:()=>{Game.state.wrongAttempts+=3}}
+                {text:"坐在湖边，借着路灯的光翻开日记",next:11,effect:()=>{Game.showDiary();Game.state.readDiary=true;Game.state.isLocked=true;Game.showStoryLog("你翻开日记的瞬间，湖面泛起了一圈涟漪")}},
+                {text:"把日记带回去，在宿舍里慢慢看",next:11,effect:()=>{Game.state.readDiary=true;Game.state.memories++;}},
+                {text:"把日记交到学校办公室",next:11,effect:()=>{Game.state.helpedHer=true;}},
+                {text:"把盒子重新埋回去，假装没找到",next:12,effect:()=>{Game.state.wrongAttempts+=2;}},
+                {text:"先拍照记录，再决定怎么处理",next:11,effect:()=>{Game.state.heardTheWhisper=true;Game.showStoryLog("照片拍出来全是模糊的，只有日记封面上的\"1974\"格外清晰")}}
             ]
         },
         {
             id:11,
-            text:"深夜，你听到宿舍门外有轻轻的敲门声。透过猫眼，你看到一个穿白衬衫的女生背对着你。你会——",
+            text:"日记里记载了林慧从上海来到南昌的点点滴滴。她在荒山上种树、在草棚里备课、在暴雨中抢救教材。最后一篇日记写到：\"雨太大了，山洞里的资料不能丢。如果明天是晴天就好了。\" 日记的最后一页，夹着一张手绘的地图——标注了马鞍山上山洞的位置，旁边写着：\"我把最重要的东西留在这里，给未来的华交人。\" 你会——",
             options:[
-                {text:"开门",next:12,effect:()=>{Game.state.helpedHer=true}},
-                {text:"问她是谁",next:12,effect:()=>{}},
-                {text:"假装没人在家",next:12,effect:()=>{Game.state.wrongAttempts++}},
-                {text:"打电话给宿管",next:12,effect:()=>{}}
+                {text:"按地图上的标记，去马鞍山找那个山洞",next:12,effect:()=>{Game.state.wentToCave=true;Game.state.helpedHer=true;Game.state.courage+=2;Game.showStoryLog("你的心跳加快了——你终于知道她想要什么")}},
+                {text:"把日记的内容告诉室友老王",next:12,effect:()=>{Game.state.memories++;Game.showStoryLog("老王沉默了很久：\"这个传说……居然是真的\"")}},
+                {text:"先去图书馆查更多关于1974年的资料",next:12,effect:()=>{Game.state.foundTheTruth=true;}},
+                {text:"觉得这一切太荒谬了，把日记烧掉",next:13,effect:()=>{Game.state.wrongAttempts+=3;Game.showStoryLog("火焰中冒出了白色的烟，久久不散")}},
+                {text:"把地图拍下来，发到网上求助",next:12,effect:()=>{Game.state.heardTheWhisper=true;}}
             ]
         },
         {
             id:12,
-            text:"第二天，宿管告诉你，昨晚根本没有人敲过你的门。而且——",
+            text:"当天晚上，你在宿舍复习到凌晨一点。突然，门外传来了轻轻的敲门声——三下，停顿，再三下。你透过猫眼往外看，走廊的灯光下，一个穿白衬衫的女生背对着门站着，一动不动的。她的头发湿漉漉的，衬衫上沾着泥土。你揉了揉眼睛，她还在那里。门外传来一个温柔的声音：\"你找到我的日记了吗？\" 你会——",
             options:[
-                {text:"你住的这栋楼，1974年是女教师宿舍",next:13,effect:()=>{Game.state.heardTheWhisper=true}},
-                {text:"昨晚监控坏了，什么都没拍到",next:13,effect:()=>{}},
-                {text:"你是不是太累了，出现幻觉了",next:13,effect:()=>{Game.state.wrongAttempts++}},
-                {text:"最近学校里丢了很多东西",next:13,effect:()=>{}}
+                {text:"深吸一口气，打开门",next:13,effect:()=>{Game.state.courage+=2;Game.state.helpedHer=true;Game.showStoryLog("门开了，走廊里空无一人，但地上有一小滩水渍")}},
+                {text:"隔着门回答：\"我找到了。你是林慧老师吗？\"",next:13,effect:()=>{Game.state.courage++;Game.state.helpedHer=true;Game.showStoryLog("门外安静了。然后你听到了一声轻轻的\"谢谢\"")}},
+                {text:"不敢开门，打电话叫醒隔壁的室友",next:13,effect:()=>{Game.state.memories++;}},
+                {text:"假装睡着了，不发出任何声音",next:13,effect:()=>{Game.state.wrongAttempts++;}},
+                {text:"从猫眼里继续观察她",next:13,effect:()=>{Game.showStoryLog("她慢慢转过了身——你看清了她的脸，和那张老照片里一模一样")}}
             ]
         },
         {
             id:13,
-            text:"你终于鼓起勇气去了马鞍山。在开山亭后面，你真的找到了一个被杂草掩盖的山洞。洞口有一块石碑，上面刻着——",
+            text:"第二天一早，你去找了学校资历最老的宿管阿姨。阿姨姓周，在华交工作了三十年。你鼓起勇气问她：\"周阿姨，北区33栋……以前是做什么用的？\" 周阿姨正在择菜的手突然停住了。她盯着你看了很久，然后压低声音说：\"1974年，那栋楼是第一批援建女教师的宿舍。有个叫林慧的姑娘，就住在你现在那个房间。那年夏天，山洪暴发……\" 她没有再说下去。你会——",
             options:[
-                {text:"日新其德，止于至善",next:14,effect:()=>{Game.state.helpedHer=true}},
-                {text:"团结严谨，求实勤奋",next:14,effect:()=>{}},
-                {text:"创业维艰，郁郁松樟作证",next:14,effect:()=>{Game.state.helpedHer=true}},
-                {text:"没有石碑",next:15,effect:()=>{Game.state.wrongAttempts++}}
+                {text:"\"周阿姨，您能不能把她的故事完整地告诉我？\"",next:14,effect:()=>{Game.state.helpedHer=true;Game.state.foundTheTruth=true;Game.state.memories+=2;Game.showStoryLog("周阿姨的眼眶红了：\"她是个好姑娘，不该被忘记\"")}},
+                {text:"\"所以我现在住的就是她当年的房间？\"",next:14,effect:()=>{Game.state.heardTheWhisper=true;Game.showStoryLog("周阿姨点点头，递给你一把生锈的钥匙")}},
+                {text:"谢谢周阿姨，然后默默离开",next:14,effect:()=>{}},
+                {text:"\"这些都是巧合吧，世界上哪有鬼\"",next:14,effect:()=>{Game.state.wrongAttempts++;}},
+                {text:"\"那把钥匙是……？\"",next:14,effect:()=>{Game.state.courage++;Game.showStoryLog("周阿姨说：\"是她留给你的\"")}}
             ]
         },
         {
             id:14,
-            text:"走进山洞，你看到了一个落满灰尘的木箱。打开箱子，里面是——",
+            text:"周末，你终于踏上了马鞍山。山路崎岖，两旁的松树遮天蔽日。走了大约四十分钟，你看到了开山亭——一座朴素的水泥亭子，孤独地矗立在山顶上。亭子后面，一片茂密的灌木丛中，隐约可以看到一个被杂草掩盖的洞口。洞口旁边立着一块矮矮的石碑，上面刻着一行字，经过五十年的风雨侵蚀已经有些模糊。你蹲下来仔细辨认——",
             options:[
-                {text:"一沓1974年的教学资料",next:15,effect:()=>{Game.state.helpedHer=true}},
-                {text:"一件白衬衫",next:15,effect:()=>{Game.state.heardTheWhisper=true}},
-                {text:"一本完整的日记",next:15,effect:()=>{Game.showDiary();Game.state.isLocked=true}},
-                {text:"什么都没有",next:16,effect:()=>{Game.state.wrongAttempts+=2}}
+                {text:"\"创业维艰，郁郁松樟作证\"",next:15,effect:()=>{Game.state.helpedHer=true;Game.state.wentToCave=true;Game.state.memories++;Game.showStoryLog("你摸了摸石碑上的刻痕——那是用铁钎一笔一画凿出来的")}},
+                {text:"\"日新其德，止于至善\"",next:15,effect:()=>{Game.state.helpedHer=true;Game.state.wentToCave=true;}},
+                {text:"\"1974年，六十五位开拓者在此奠基\"",next:15,effect:()=>{Game.state.wentToCave=true;Game.state.memories++;}},
+                {text:"石碑上的字已经完全看不清了",next:16,effect:()=>{Game.state.wrongAttempts++;}},
+                {text:"用手机手电筒仔细照着石碑，把上面的字抄下来",next:15,effect:()=>{Game.state.wentToCave=true;Game.state.foundTheTruth=true;Game.showStoryLog("石碑背面还有一行小字：\"林慧手植松树一株，1974.3.15\"")}}
             ]
         },
         {
             id:15,
-            text:"就在这时，你身后传来了一个温柔的女声：\"你终于来了。\" 你会——",
+            text:"你拨开洞口的藤蔓，走进了山洞。洞里比外面凉快很多，空气中弥漫着潮湿的泥土气息。你的手电筒光束扫过洞壁，上面竟然有人用粉笔写的字：\"林慧，1974.7.15，最后一天\"。继续往里走，在洞穴深处，你看到了一个落满灰尘的旧木箱。木箱没有上锁，盖子上用红漆写着：\"华交建校资料——请妥善保管\"。你会——",
             options:[
-                {text:"回头看她",next:16,effect:()=>{Game.state.helpedHer=true}},
-                {text:"跑出山洞",next:16,effect:()=>{Game.state.wrongAttempts++}},
-                {text:"问她是谁",next:16,effect:()=>{}},
-                {text:"站在原地不动",next:16,effect:()=>{}}
+                {text:"虔诚地打开木箱",next:16,effect:()=>{Game.state.helpedHer=true;Game.state.courage++;Game.showStoryLog("木箱打开的瞬间，一股樟脑的清香弥漫了整个山洞")}},
+                {text:"先对木箱鞠了一躬，然后再打开",next:16,effect:()=>{Game.state.helpedHer=true;Game.state.memories++;Game.showStoryLog("你觉得这是对一位守护者的尊重")}},
+                {text:"先拍照记录现场情况",next:16,effect:()=>{}},
+                {text:"觉得太诡异了，不敢打开",next:17,effect:()=>{Game.state.wrongAttempts++;}},
+                {text:"大声说：\"林慧老师，我来了\"，然后打开木箱",next:16,effect:()=>{Game.state.helpedHer=true;Game.state.courage+=2;Game.state.metHerBefore=true;Game.showStoryLog("山洞深处传来了一声轻轻的叹息——像释怀，也像感谢")}}
             ]
         },
         {
             id:16,
-            text:"她告诉你，她叫林慧，是1974年第一批来华交的上海老师。当年为了保护学校的建校资料，在山洞里遇到了塌方，再也没有出来。她的愿望是——",
+            text:"木箱里整整齐齐地码放着三样东西：一沓用塑料布包裹的1974年教学资料——高等数学教案、铁路工程概论讲义、英语教材手稿；一件叠得整整齐齐的白衬衫，领口绣着\"LH\"两个字母；还有一本完整的日记本，比你在湖边找到的那本更厚。日记的最后一篇，字迹不再是潦草绝望，而是平静温柔——仿佛她早就知道有人会来。你会——",
             options:[
-                {text:"把资料交给学校",next:17,effect:()=>{Game.state.helpedHer=true}},
-                {text:"再看一眼天佑桥",next:17,effect:()=>{Game.state.helpedHer=true}},
-                {text:"告诉后人当年的故事",next:17,effect:()=>{Game.state.helpedHer=true}},
-                {text:"永远留在这里",next:18,effect:()=>{Game.state.wrongAttempts+=3}}
+                {text:"翻开那本更厚的日记",next:17,effect:()=>{Game.showDiary();Game.state.readDiary=true;Game.state.isLocked=true;Game.state.foundTheTruth=true;Game.showStoryLog("日记里记载了她生命最后三天的每一分每一秒")}},
+                {text:"先把教学资料拿出来，小心地拂去灰尘",next:17,effect:()=>{Game.state.helpedHer=true;Game.state.memories++;}},
+                {text:"拿起那件白衬衫，贴在胸口",next:17,effect:()=>{Game.state.helpedHer=true;Game.state.courage++;Game.showStoryLog("衬衫还残留着一丝温度——不可能的，已经五十年了")}},
+                {text:"把整个木箱原封不动地带出山洞",next:17,effect:()=>{Game.state.helpedHer=true;Game.state.memories+=2;}},
+                {text:"跪在木箱前，哭了",next:17,effect:()=>{Game.state.helpedHer=true;Game.state.memories+=3;Game.showStoryLog("不是因为害怕——是因为你终于理解了什么叫\"坚守\"")}}
             ]
         },
         {
             id:17,
-            text:"你答应了她的请求。她对你笑了笑，然后慢慢变得透明。在她消失的最后一刻，她说——",
+            text:"就在你翻看木箱里的东西时，身后的黑暗中亮起了一团柔和的白色光芒。光芒中，一个穿着白衬衫的女生缓缓走了出来。她的头发湿漉漉的，但脸上带着微笑。和梦里不同的是，这一次——你能清楚地看到她的脸，能听到她的声音。她说：\"五十年了，终于有人来了。你好，我叫林慧，1974年的数学老师。谢谢你来这里。\" 你会——",
             options:[
-                {text:"谢谢你，花椒欢迎你",next:19,effect:()=>{Game.state.currentEnding="good"}},
-                {text:"日新其德，止于至善",next:19,effect:()=>{Game.state.currentEnding="good"}},
-                {text:"好好照顾我的学校",next:19,effect:()=>{Game.state.currentEnding="good"}},
-                {text:"留下来陪我吧",next:19,effect:()=>{Game.state.currentEnding="bad"}}
+                {text:"\"林老师，您一直在等吗？\"",next:18,effect:()=>{Game.state.helpedHer=true;Game.state.courage++;Game.showStoryLog("她的眼泪滑落，但嘴角是笑着的：\"我知道总有一天会有人来的\"")}},
+                {text:"\"我在湖边见过您。您还记得我吗？\"",next:18,effect:()=>{Game.state.metHerBefore=true;Game.state.memories++;}},
+                {text:"被吓到了，说不出话来",next:18,effect:()=>{}},
+                {text:"转身就往洞口跑",next:19,effect:()=>{Game.state.wrongAttempts+=2;Game.showStoryLog("她在你身后轻轻地说：\"没关系，我等了五十年，不差这一会儿\"")}},
+                {text:"走上前，向她伸出手",next:18,effect:()=>{Game.state.helpedHer=true;Game.state.courage+=3;Game.showStoryLog("你的手穿过了她的——但她笑得更开心了")}}
             ]
         },
         {
             id:18,
-            text:"你拒绝了她的请求。她的笑容消失了，山洞里的温度瞬间降到了冰点。她冷冷地说——",
+            text:"林慧坐在木箱旁边，像在给学生们上课一样，慢慢讲起了她的故事。1974年7月15日那天，南昌下了百年不遇的暴雨。她和几个同事冲进山洞抢救建校资料——那是从上海千里迢迢带来的珍贵教材，是这所新大学的精神命脉。资料保住了，但山洞在她最后一次返回时塌了。\"我一点都不后悔，\"她平静地说，\"因为我知道，这些资料会让后来的学生们学到真东西。我只是……有些遗憾。\" 你会——",
             options:[
-                {text:"那你就永远留下来陪我吧",next:19,effect:()=>{Game.state.currentEnding="bad"}},
-                {text:"你会后悔的",next:19,effect:()=>{Game.state.currentEnding="bad"}},
-                {text:"既然你不愿意，那就让别人来",next:19,effect:()=>{Game.state.currentEnding="bad"}},
-                {text:"我等了50年，你居然拒绝我",next:19,effect:()=>{Game.state.currentEnding="bad"}}
+                {text:"\"林老师，您有什么遗憾？告诉我\"",next:19,effect:()=>{Game.state.helpedHer=true;Game.state.courage++;Game.showStoryLog("她的声音颤抖了：\"我想再看一眼天佑桥……我亲手种的那棵法桐树，不知道还在不在\"")}},
+                {text:"握住拳头，忍住眼泪",next:19,effect:()=>{Game.state.memories++;}},
+                {text:"\"您的资料都还在，学校也很好，您放心\"",next:19,effect:()=>{Game.state.helpedHer=true;Game.showStoryLog("她像个孩子一样笑了：\"真的吗？太好了\"")}},
+                {text:"不知道该说什么，只是静静地听",next:19,effect:()=>{}},
+                {text:"\"林老师，我能帮您做什么？\"",next:19,effect:()=>{Game.state.helpedHer=true;Game.state.courage+=2;}}
             ]
         },
         {
             id:19,
-            text:"当你走出山洞时，天已经亮了。你回头看了一眼，开山亭在晨光中显得格外庄严。你知道——",
+            text:"林慧站起身，走到洞口。午后的阳光透过树叶洒在她的身上，她的轮廓开始变得有些透明。她回头看着你，眼神里有期待，也有不舍。\"我能请你帮一个忙吗？\"她说，\"不是什么难事——我只是希望，这些资料能被送到学校档案室。还有……告诉后来的学生们，1974年有六十五个人，从上海来到这片荒山，用双手建起了这所学校。不是为了什么伟大，只是觉得——这里值得。\" 你会——",
             options:[
-                {text:"华交的历史，由我们来传承",next:20,effect:()=>{}},
-                {text:"有些故事，永远不会被遗忘",next:20,effect:()=>{}},
-                {text:"我会永远记住林老师",next:20,effect:()=>{}},
-                {text:"终于结束了",next:20,effect:()=>{}}
+                {text:"\"林老师，我一定帮您完成这个心愿\"",next:20,effect:()=>{Game.state.helpedHer=true;Game.state.currentEnding="good";Game.state.memories+=3;Game.showStoryLog("她的身体开始发光，像被阳光穿透的水晶")}},
+                {text:"\"不只是资料，我还要把您的故事写下来\"",next:20,effect:()=>{Game.state.helpedHer=true;Game.state.currentEnding="good";Game.state.foundTheTruth=true;Game.state.memories+=2;}},
+                {text:"\"好，我答应您。\"——简单但坚定",next:20,effect:()=>{Game.state.helpedHer=true;Game.state.currentEnding="good";}},
+                {text:"犹豫了：\"我……我不知道能不能做到\"",next:20,effect:()=>{Game.state.currentEnding="hidden";}},
+                {text:"沉默不语，低下了头",next:21,effect:()=>{Game.state.wrongAttempts+=3;Game.state.currentEnding="bad";Game.showStoryLog("她眼中的光芒暗了一些：\"没关系的……真的没关系\"")}}
             ]
         },
         {
             id:20,
-            text:"最后一个问题：你愿意把这个故事告诉更多的花椒人吗？",
+            text:"林慧看到你眼中的坚定，欣慰地点了点头。她从口袋里掏出一支老式的钢笔，放在木箱上。\"这是我刚来南昌时，校长送给我的。他说，要用这支笔写出华交的第一本教材。\" 她后退了两步，身体变得更加透明。周围的空气里，开始飘散出淡淡的花香——那是她最喜欢的栀子花的味道。在消失的最后一刻，她最后看了你一眼，说——",
             options:[
-                {text:"愿意",next:-1,effect:()=>{if(Game.state.currentEnding!=="bad")Game.state.currentEnding="true"}},
-                {text:"不愿意",next:-1,effect:()=>{if(Game.state.currentEnding!=="bad")Game.state.currentEnding="hidden"}}
+                {text:"\"谢谢你，花椒欢迎你。好好爱这所学校\"",next:22,effect:()=>{Game.state.helpedHer=true;Game.state.courage++;Game.showStoryLog("她的身影化作一片栀子花瓣，随风飘出了山洞")}},
+                {text:"\"日新其德，止于至善——这八个字，送给你\"",next:22,effect:()=>{Game.state.memories++;}},
+                {text:"\"替我去看看天佑桥那棵法桐树，告诉它我很好\"",next:22,effect:()=>{Game.state.memories++;Game.state.helpedHer=true;}},
+                {text:"\"你的未来还很长，不要辜负了这所学校\"",next:22,effect:()=>{}},
+                {text:"她什么都没说，只是笑着挥了挥手",next:22,effect:()=>{Game.state.memories++;}}
+            ]
+        },
+        {
+            id:21,
+            text:"你选择了逃避。林慧的眼神从期待变成了深深的失望，但更多的——是一种习惯性的理解。她后退了一步，白色的光芒黯淡了下去。\"没关系，\"她的声音变得很轻，像从很远的地方传来，\"这五十年里，来过很多人。有的人害怕了，有的人不相信，有的人只是路过。你不是第一个，也不会是最后一个。\" 你会——",
+            options:[
+                {text:"突然感到一阵心痛：\"林老师，等一下——我改主意了\"",next:20,effect:()=>{Game.state.helpedHer=true;Game.state.courage+=2;Game.showStoryLog("她的眼中重新燃起了光芒：\"真的吗？\"")}},
+                {text:"捡起木箱里的钢笔：\"至少，我会把这支笔带出去\"",next:22,effect:()=>{Game.state.helpedHer=true;Game.state.memories++;Game.showStoryLog("她轻轻地说：\"谢谢你，至少你还记得我\"")}},
+                {text:"转身跑出山洞，不敢回头",next:22,effect:()=>{Game.state.wrongAttempts+=2;Game.state.currentEnding="bad";}},
+                {text:"跪下来，说了一声对不起",next:22,effect:()=>{Game.state.memories++;}},
+                {text:"站在原地，泪水模糊了视线",next:22,effect:()=>{Game.state.currentEnding="hidden";}}
+            ]
+        },
+        {
+            id:22,
+            text:"你抱着木箱走出山洞的时候，天已经快要黑了。夕阳把整个马鞍山染成了金黄色，开山亭的轮廓在逆光中格外庄严。你回头看了一眼山洞——洞口已经重新被藤蔓遮住了，仿佛从来没有人进去过。但怀里的木箱沉甸甸的，告诉你这一切都是真的。山风吹来，带着松树的清香。你忽然觉得，这座山、这所学校，承载了太多你不知道的故事。你会——",
+            options:[
+                {text:"把木箱亲自送到学校档案室",next:23,effect:()=>{Game.state.helpedHer=true;Game.state.memories++;Game.showStoryLog("档案室的老师看到资料后，手抖得几乎拿不住")}},
+                {text:"先去看看天佑桥旁边那棵法桐树",next:23,effect:()=>{Game.state.helpedHer=true;Game.state.courage++;Game.showStoryLog("法桐树还在——已经长到五层楼高了，枝叶繁茂")}},
+                {text:"在开山亭里坐一会儿，整理思绪",next:23,effect:()=>{Game.state.memories++;}},
+                {text:"拿出手机，给老王打电话告诉他一切",next:23,effect:()=>{}},
+                {text:"对着山洞的方向，深深鞠了一躬",next:23,effect:()=>{Game.state.helpedHer=true;Game.state.courage++;Game.state.memories+=2;Game.showStoryLog("风吹过松林，发出沙沙的声音——像是有人在回应你")}}
+            ]
+        },
+        {
+            id:23,
+            text:"你把木箱送到学校档案室的那天，正好是开学典礼的日子。操场上几千名新生穿着校服，齐声诵读校训：\"日新其德，止于至善。\" 阳光很好，法桐大道上的树叶在风中翻飞。你站在人群中，忽然觉得眼眶有点湿润。旁边的一个同学好奇地问你：\"你怎么了？\" 你会——",
+            options:[
+                {text:"\"没什么，就是觉得……能来这所学校，真好\"",next:24,effect:()=>{Game.state.memories++;}},
+                {text:"给他讲了林慧的故事",next:24,effect:()=>{Game.state.helpedHer=true;Game.state.courage++;Game.showStoryLog("他听完后沉默了，然后说：\"我们确实欠他们太多了\"")}},
+                {text:"只是摇摇头，把目光投向远处的马鞍山",next:24,effect:()=>{}},
+                {text:"\"我在想，五十年前的今天，也有一群人站在这里\"",next:24,effect:()=>{Game.state.foundTheTruth=true;Game.state.memories++;}},
+                {text:"什么都没有说，只是紧紧握住了口袋里那支老钢笔",next:24,effect:()=>{Game.state.memories++;}}
+            ]
+        },
+        {
+            id:24,
+            text:"开学典礼结束后，校长在广播里宣布了一个消息：学校决定在开山亭旁边建一座\"建校先驱纪念墙\"，把1974年第一批援建教师的六十五个名字刻在上面。人群中爆发出了热烈的掌声。你站在人群中，抬头看着晴朗的天空——一朵白云正缓缓飘过马鞍山的方向。你会——",
+            options:[
+                {text:"第一个走到签名墙前，写下林慧的名字",next:25,effect:()=>{Game.state.helpedHer=true;Game.state.courage++;Game.showStoryLog("你的笔迹旁边，不知什么时候多了一行娟秀的小字：\"谢谢\"")}},
+                {text:"跟着大家一起鼓掌，眼眶湿润",next:25,effect:()=>{Game.state.memories++;}},
+                {text:"拿出手机拍下这一刻，想留作纪念",next:25,effect:()=>{}},
+                {text:"在心里默默地说：\"林老师，您听到了吗？\"",next:25,effect:()=>{Game.state.helpedHer=true;Game.state.memories++;}},
+                {text:"觉得和自己没什么关系，转身离开",next:25,effect:()=>{Game.state.wrongAttempts++;}}
+            ]
+        },
+        {
+            id:25,
+            text:"时间过得很快，转眼你已经在这所学校度过了一个学期。你养成了一个习惯——每周都会去一次开山亭，在亭子里坐一会儿。有时候你会带一本书，有时候只是发呆。那个山洞已经彻底被藤蔓封住了，但你一点都不觉得遗憾。因为你心里知道，她已经不在那里了。她就在这所学校的每一个角落里——在法桐大道的树荫里，在孔目湖的水波里，在天佑桥的路灯下。有一天，你在图书馆遇到了一个新生，他手里拿着那本泛黄的新生手册。你会——",
+            options:[
+                {text:"主动走过去，告诉他这所学校真正的故事",next:26,effect:()=>{Game.state.helpedHer=true;Game.state.courage++;Game.showStoryLog("他听完后瞪大了眼睛：\"学长，这是真的吗？\"")}},
+                {text:"对他微笑了一下，什么都没说",next:26,effect:()=>{Game.state.memories++;}},
+                {text:"把他拉到一边，悄悄提醒他手册最后一页的事",next:26,effect:()=>{Game.state.heardTheWhisper=true;}},
+                {text:"告诉他：\"好好看这本手册，每一页都很重要\"",next:26,effect:()=>{}},
+                {text:"假装没看到，继续看自己的书",next:26,effect:()=>{Game.state.wrongAttempts++;}}
+            ]
+        },
+        {
+            id:26,
+            text:"期末前的一天晚上，你做了一个很特别的梦。梦里你站在1974年的马鞍山上，周围是荒草和泥巴。林慧穿着那件白衬衫，正和六十几个同伴一起挖地基。他们的手上全是血泡，但每个人都在笑。林慧转过头看到了你，她的笑容灿烂极了，冲你挥了挥手里的锄头：\"同学，以后这里就是你的学校啦！\" 你在梦里大声喊——",
+            options:[
+                {text:"\"谢谢你们！这所学校真的很棒！\"",next:27,effect:()=>{Game.state.helpedHer=true;Game.state.memories+=2;Game.showStoryLog("梦里的林慧笑得更开心了，和同伴们一起向你挥手")}},
+                {text:"\"林老师！您的资料我们保存得很好！\"",next:27,effect:()=>{Game.state.helpedHer=true;Game.state.courage++;}},
+                {text:"\"你们的努力没有白费！\"",next:27,effect:()=>{Game.state.memories++;}},
+                {text:"说不出话来，只是用力地点头",next:27,effect:()=>{}},
+                {text:"跑过去想拥抱她，但在碰到她之前梦就醒了",next:27,effect:()=>{Game.state.helpedHer=true;Game.state.memories++;}}
+            ]
+        },
+        {
+            id:27,
+            text:"梦醒之后，窗外天已经蒙蒙亮了。你的枕头又是湿的——但这一次，不是因为害怕。你起身走到窗边，看着晨曦中天佑桥的轮廓。桥上的路灯刚刚熄灭，法桐大道上已经有早起的学生在晨跑。一切看起来都那么平常，那么美好。你忽然理解了林慧在日记里写的那句话：\"想到以后会有千千万万的学生在这里读书，就觉得一切都值得。\" 你拿出手机——",
+            options:[
+                {text:"打开备忘录，开始写下你和林慧的故事",next:28,effect:()=>{Game.state.helpedHer=true;Game.state.foundTheTruth=true;Game.state.memories++;Game.showStoryLog("你的手指在键盘上飞快地敲击——这个故事不应该只被你一个人记得")}},
+                {text:"给父母发了一条消息：\"我在学校很好，你们放心\"",next:28,effect:()=>{Game.state.memories++;}},
+                {text:"拍了一张天佑桥的晨曦照片，发到朋友圈",next:28,effect:()=>{}},
+                {text:"什么都没有做，只是安静地看着窗外出神",next:28,effect:()=>{}},
+                {text:"打开日历，标记了今天——作为一个特殊的日子",next:28,effect:()=>{Game.state.memories++;}}
+            ]
+        },
+        {
+            id:28,
+            text:"最后一道题：一个学期过去了。你不再是刚入学那个茫然的新生了。你知道了法桐大道上的树是谁种的，知道了开山亭的地基是谁挖的，知道了孔目湖的水为什么有时候会变浑。你知道了一个叫林慧的女老师，在1974年的夏天，把生命融进了这所学校的每一寸土地里。现在，你坐在图书馆三楼靠窗的位置——就是最初发现那张老照片的位置。窗外，天佑桥上的学生们来来往往。你会——",
+            options:[
+                {text:"把写好的故事装订成册，匿名放在图书馆的书架上——等待下一个发现它的人",next:-1,effect:()=>{if(Game.state.currentEnding!=="bad")Game.state.currentEnding="true";Game.showStoryLog("你把册子放在书架上的那一刻，窗外有一片法桐叶飘过")}},
+                {text:"把故事发布到学校的公众号上，让更多人知道",next:-1,effect:()=>{if(Game.state.currentEnding!=="bad")Game.state.currentEnding="true";Game.state.helpedHer=true;}},
+                {text:"把故事告诉身边每一个愿意听的人",next:-1,effect:()=>{if(Game.state.currentEnding!=="bad")Game.state.currentEnding="true";Game.state.helpedHer=true;Game.state.courage++;}},
+                {text:"把故事写进自己的日记里，留给自己",next:-1,effect:()=>{if(Game.state.currentEnding!=="bad")Game.state.currentEnding="hidden";}},
+                {text:"决定让它成为自己一个人的秘密",next:-1,effect:()=>{if(Game.state.currentEnding!=="bad")Game.state.currentEnding="hidden";Game.state.wrongAttempts++;}}
             ]
         }
     ],
@@ -590,39 +718,77 @@ const Game = {
 校长说，我们要在这里建一所大学，一所属于中国铁路的大学。
 我被分配教数学，住在临时搭的草棚里。
 晚上能听到狼叫，有点害怕。
-但想到以后会有千千万万的学生在这里读书，就觉得一切都值得。`,
-`1974年5月1日 晴
-开山亭的地基打好了。
-我们65个人，用锄头和铁锹，在荒山上开出了第一片平地。
-手上磨出了血泡，肩膀也肿了，但没有人抱怨。
-校长在地基里埋了一块石碑，上面刻着\"创业维艰，郁郁松樟作证\"。
-他说，以后的学生看到这块石碑，就会知道我们当年有多不容易。
-今天我在天佑桥的位置种了一棵法桐树。
+但想到以后会有千千万万的学生在这里读书，就觉得一切都值得。
+明天要开始挖地基了，校长说第一座建筑叫"开山亭"。
+我喜欢这个名字——开山，就是一切开始的地方。`,
+
+`1974年4月8日 晴
+地基挖了快一个月了，手上全是血泡，肩膀肿得抬不起来。
+但你知道吗——今天我们六十五个人一起，把第一块基石埋进了土里。
+校长在地基里放了一块石碑，上面刻着"创业维艰，郁郁松樟作证"。
+他念这段话的时候，好几个老师都哭了。
+不是因为苦——是因为骄傲。我们在做一件大事。
+我在天佑桥规划的位置旁边种了一棵法桐树苗。
+我给它起了个名字：小佑。
 希望等它长大的时候，学校已经建好了。`,
-`1974年7月15日 雨
-下大雨了，山洪暴发了。
-我们存的资料都被淋湿了。
-这些都是从上海带来的珍贵教材，是学校的命根子。
-我和几个老师把资料搬到了后山的山洞里。
-山洞很干燥，应该能保住这些资料。
-雨下得太大了，山路很滑。
-明天我再去看看，把资料整理一下。
-希望明天是个晴天。`,
-`（最后一页没有日期，字迹潦草）
-山洞塌了...
-我出不去了...
-资料还在我身边...
-它们不能被毁掉...
-如果有人看到这本日记...
-请把资料交给学校...
-告诉他们...
-我们没有白来...
-日新其德...
-止于至善...
-我爱这所学校...`
+
+`1974年5月1日 晴
+今天是劳动节，但我们没有放假——建校就是最好的过节。
+开山亭的地基完成了，接下来要开始盖教学楼。
+从上海运来的教材终于到了！整整三大箱。
+校长说这些教材是学校的命根子，一定要妥善保管。
+我把数学教材一本一本编号、登记、用油纸包好。
+这些书在上海的时候，是我用了一个暑假编写的。
+现在它们终于有了一个家。`,
+
+`1974年6月20日 大雨
+南昌的雨季来得又猛又急。
+今天下了一整天的大雨，草棚漏水，被子全湿了。
+但我们没有停工——因为工期不等人。
+有几个老师感冒了，但谁也不肯休息。
+晚上的时候，我听到远处有狼叫。
+孔目湖的水涨得很高，把岸边的芦苇都淹了。
+校长说，等学校建好了，湖边要修一条小路，种满栀子花。
+我喜欢栀子花。`,
+
+`1974年7月10日 闷热
+天气预报说这几天会有暴雨。
+我们把重要的教材和资料整理好，准备转移到安全的地方。
+我负责数学教研组的全部资料——三箱手写教案、两箱教材、一箱学生作业范本。
+这些是我来南昌的全部意义。
+后山有个山洞，很干燥，是个保存资料的好地方。
+明天我和几个同事一起把资料搬过去。
+希望不要下雨。`,
+
+`1974年7月15日 暴雨
+雨下得太大了。
+山洪暴发了，孔目湖的水漫上了岸。
+我们存的资料随时可能被冲走。
+我和四个老师决定立刻把所有资料转移到后山的山洞里。
+一趟、两趟、三趟……我们来回跑了七八趟。
+资料都安全了。
+但最后一趟的时候，山洞入口的土石松动了。
+我让其他人先出去。
+我留下来把最后一箱资料码整齐。
+然后——山洞塌了。
+我出不去了。
+资料还在我身边。
+它们完好无损。
+如果有人看到这本日记——
+请把资料交给学校。
+告诉后来的学生们：
+1974年，有一群人从上海来到这里。
+在荒山上建起了一所大学。
+我们吃了很多苦。
+但从来没有后悔过。
+因为这所学校——
+是我们的骄傲。
+日新其德，止于至善。
+我爱这所学校。
+胜过爱我的生命。`,
     ],
 
-    diaryDates: ["1974.03.12","1974.05.01","1974.07.15",""],
+    diaryDates: ["1974.03.12","1974.04.08","1974.05.01","1974.06.20","1974.07.10","1974.07.15"],
 
     elements: {},
 
@@ -652,7 +818,10 @@ const Game = {
             endModal: document.getElementById('endModal'),
             endTitle: document.getElementById('endTitle'),
             endText: document.getElementById('endText'),
-            grayOverlay: document.getElementById('grayOverlay')
+            grayOverlay: document.getElementById('grayOverlay'),
+            storyLog: document.getElementById('storyLog'),
+            terrorScreen: document.getElementById('terrorScreen'),
+            terrorText: document.getElementById('terrorText')
         };
     },
 
@@ -675,26 +844,20 @@ const Game = {
     renderQuestion() {
         const q = this.questions[this.state.currentQ];
         this.elements.progressText.innerHTML = `
-        第${this.state.currentQ+1}题 / 共20题
-        <div class="progress-bar" style="width:${(this.state.currentQ+1)/20*100}%"></div>
+        第${this.state.currentQ+1}题 / 共28题
+        <div class="progress-bar" style="width:${(this.state.currentQ+1)/28*100}%"></div>
         `;
-        
         this.elements.questionContainer.innerHTML = `
         <div class="question-container active">
         <div class="question-text">${q.text}</div>
         <ul class="options">
-        ${q.options.map((opt,i)=>`
-        <li data-index="${i}">${opt.text}</li>
-        `).join('')}
+        ${q.options.map((opt,i)=>`<li data-index="${i}">${opt.text}</li>`).join('')}
         </ul>
         </div>
         `;
-
         this.bindOptionEvents();
-        
         this.elements.prevBtn.disabled = (this.state.currentQ === 0);
         this.elements.nextBtn.disabled = true;
-
         this.triggerSpecialEffects();
     },
 
@@ -706,65 +869,75 @@ const Game = {
     },
 
     triggerSpecialEffects() {
-        if(this.state.currentQ === 5 && this.state.heardTheWhisper) {
-            setTimeout(() => this.triggerWhisperEffect(), 1000);
+        const q = this.state.currentQ;
+        if(q === 6 && this.state.heardTheWhisper) {
+            setTimeout(() => this.triggerWhisperEffect(), 1500);
         }
-        if(this.state.currentQ === 10 && this.state.foundOldPhoto) {
+        if(q === 11 && this.state.readDiary) {
             setTimeout(() => this.triggerPhotoEffect(), 1000);
         }
-        if(this.state.currentQ === 15 && this.state.wentToCave) {
-            setTimeout(() => this.triggerCaveEffect(), 500);
+        if(q === 14 && this.state.wentToCave) {
+            setTimeout(() => this.triggerCaveEffect(), 800);
+        }
+        if(q === 16 && this.state.foundTheTruth) {
+            setTimeout(() => this.triggerWarmEffect(), 500);
+        }
+        if(q === 22 && this.state.helpedHer) {
+            setTimeout(() => this.triggerSunsetEffect(), 2000);
         }
     },
 
     triggerWhisperEffect() {
         document.body.classList.add('red-bg');
-        setTimeout(() => {
-            document.body.classList.remove('red-bg');
-        }, 500);
+        setTimeout(() => document.body.classList.remove('red-bg'), 600);
     },
 
     triggerPhotoEffect() {
         document.body.classList.add('flash');
         setTimeout(() => {
             document.body.classList.remove('flash');
-            this.showMicroFeedback("她在看着你", this.elements.questionContainer.querySelector('.options li.selected'));
+            const sel = this.elements.questionContainer.querySelector('.options li.selected');
+            if(sel) this.showMicroFeedback("有人在看着你", sel);
         }, 300);
     },
 
     triggerCaveEffect() {
         this.state.isLocked = true;
         this.elements.grayOverlay.classList.add('active');
-        for(let i = 0; i < 20; i++) {
-            setTimeout(() => {
-                this.createPeepText("她在等你");
-            }, i * 100);
+        for(let i = 0; i < 25; i++) {
+            setTimeout(() => this.createPeepText("找到她了"), i * 80);
         }
+        setTimeout(() => this.elements.grayOverlay.classList.remove('active'), 5000);
+    },
+
+    triggerWarmEffect() {
+        document.body.style.transition = 'background 2s';
+        document.body.style.background = '#fffef5';
         setTimeout(() => {
-            this.elements.grayOverlay.classList.remove('active');
-        }, 6000);
+            document.body.style.background = '#fff';
+        }, 3000);
+    },
+
+    triggerSunsetEffect() {
+        this.showStoryLog("山风吹过松林，发出沙沙的声音");
     },
 
     selectOption(index, el) {
         if(this.state.isLocked) return;
-        
         const options = this.elements.questionContainer.querySelectorAll('.options li');
         options.forEach(o => o.classList.remove('selected'));
         el.classList.add('selected');
         this.state.answers[this.state.currentQ] = index;
-
         const opt = this.questions[this.state.currentQ].options[index];
         opt.effect();
-
         this.showMicroFeedback("...", el);
-
-        if(Math.random() < 0.2 && this.state.currentQ > 10) {
-            const randomOption = options[Math.floor(Math.random() * options.length)];
-            if(!randomOption.classList.contains('selected')) {
-                randomOption.classList.add('disappear');
+        if(Math.random() < 0.15 && this.state.currentQ > 12) {
+            const nonSelected = [...options].filter(o => !o.classList.contains('selected'));
+            if(nonSelected.length > 0) {
+                const rand = nonSelected[Math.floor(Math.random() * nonSelected.length)];
+                rand.classList.add('disappear');
             }
         }
-
         this.elements.nextBtn.disabled = false;
     },
 
@@ -777,14 +950,24 @@ const Game = {
         setTimeout(() => fb.remove(), 1500);
     },
 
+    showStoryLog(text) {
+        const log = this.elements.storyLog;
+        log.textContent = text;
+        log.style.display = 'block';
+        log.style.animation = 'none';
+        log.offsetHeight;
+        log.style.animation = 'storyFade 3s forwards';
+        setTimeout(() => { log.style.display = 'none'; }, 3000);
+    },
+
     createPeepText(text) {
         const el = document.createElement('div');
         el.className = 'peep-text';
         el.textContent = text;
-        el.style.left = Math.random() * 90 + 5 + '%';
-        el.style.top = Math.random() * 90 + 5 + '%';
+        el.style.left = Math.random() * 85 + 5 + '%';
+        el.style.top = Math.random() * 85 + 5 + '%';
         document.body.appendChild(el);
-        setTimeout(() => el.remove(), 6000);
+        setTimeout(() => el.remove(), 5000);
     },
 
     goToPrev() {
@@ -795,9 +978,7 @@ const Game = {
     },
 
     goToNext() {
-        if(this.state.answers[this.state.currentQ] === undefined) {
-            return;
-        }
+        if(this.state.answers[this.state.currentQ] === undefined) return;
         const opt = this.questions[this.state.currentQ].options[this.state.answers[this.state.currentQ]];
         if(opt.next === -1) {
             this.showFinalScreen();
@@ -814,11 +995,11 @@ const Game = {
     },
 
     updateDiary() {
-        const content = this.diaryContents[this.state.diaryPage];
         const date = this.diaryDates[this.state.diaryPage];
+        const content = this.diaryContents[this.state.diaryPage];
         this.elements.diaryContent.innerHTML = (date ? `<div class="diary-date">${date}</div>` : '') + content;
         this.elements.diaryPrev.disabled = (this.state.diaryPage === 0);
-        this.elements.diaryNext.disabled = (this.state.diaryPage === 3);
+        this.elements.diaryNext.disabled = (this.state.diaryPage === this.diaryContents.length - 1);
     },
 
     prevDiaryPage() {
@@ -829,7 +1010,7 @@ const Game = {
     },
 
     nextDiaryPage() {
-        if(this.state.diaryPage < 3) {
+        if(this.state.diaryPage < this.diaryContents.length - 1) {
             this.state.diaryPage++;
             this.updateDiary();
         }
@@ -845,21 +1026,26 @@ const Game = {
         this.elements.finalText.innerHTML = '';
         this.elements.confirmBtn.className = 'confirm-btn';
 
-        if(this.state.wrongAttempts >= 5 || this.state.currentEnding === "bad") {
-            const finalTexts = ["你没能离开山洞","她抓住了你的手","你成为了新的守护者","永远留在了1974年的夏天"];
-            finalTexts.forEach((t, i) => {
+        const totalPositive = this.state.memories + this.state.courage;
+        const isBad = this.state.wrongAttempts >= 6 || this.state.currentEnding === "bad";
+        const isGood = this.state.helpedHer && (this.state.currentEnding === "true" || this.state.currentEnding === "good");
+        const isTrue = this.state.foundTheTruth && this.state.memories >= 5;
+
+        if(isBad) {
+            const texts = ["你逃出了山洞","但有些东西留在了那里","林慧还在等","等下一个愿意停下脚步的人"];
+            texts.forEach((t, i) => {
                 const span = document.createElement('div');
                 span.className = 'final-text red';
                 span.textContent = t;
                 span.style.animationDelay = (i * 1.5) + 's';
                 this.elements.finalText.appendChild(span);
             });
-            this.elements.confirmBtn.classList.add('red');
+            this.elements.confirmBtn.style.background = '#c00';
             this.elements.confirmBtn.textContent = '接受';
             this.state.currentEnding = "bad";
-        } else if(this.state.helpedHer && this.state.currentEnding === "true") {
-            const finalTexts = ["林老师终于安息了","她的故事被永远铭记","开山亭的松树又长高了","花椒永远欢迎你"];
-            finalTexts.forEach((t, i) => {
+        } else if(isGood && isTrue && totalPositive >= 8) {
+            const texts = ["林老师终于安息了","她的故事被永远铭记","开山亭的松树又长高了","花椒永远欢迎你"];
+            texts.forEach((t, i) => {
                 const span = document.createElement('div');
                 span.className = 'final-text green';
                 span.textContent = t;
@@ -869,9 +1055,21 @@ const Game = {
             this.elements.confirmBtn.classList.add('green');
             this.elements.confirmBtn.textContent = '传承';
             this.state.currentEnding = "good";
+        } else if(isGood && totalPositive >= 4) {
+            const texts = ["你完成了林老师的心愿","1974年的故事终于有了结局","但那座山上","还有很多故事没有被发现"];
+            texts.forEach((t, i) => {
+                const span = document.createElement('div');
+                span.className = 'final-text green';
+                span.textContent = t;
+                span.style.animationDelay = (i * 1.5) + 's';
+                this.elements.finalText.appendChild(span);
+            });
+            this.elements.confirmBtn.classList.add('green');
+            this.elements.confirmBtn.textContent = '铭记';
+            this.state.currentEnding = "good";
         } else {
-            const finalTexts = ["你走出了山洞","但什么都没有改变","林老师还在等","等下一个愿意听她故事的人"];
-            finalTexts.forEach((t, i) => {
+            const texts = ["你走出了山洞","但什么都没有改变","林慧还在等","等下一个愿意听她故事的人"];
+            texts.forEach((t, i) => {
                 const span = document.createElement('div');
                 span.className = 'final-text';
                 span.textContent = t;
@@ -886,7 +1084,7 @@ const Game = {
         this.elements.finalScreen.classList.add('active');
         setTimeout(() => {
             this.elements.confirmBtn.classList.add('show');
-        }, 6500);
+        }, 7000);
     },
 
     showEndModal() {
@@ -894,31 +1092,53 @@ const Game = {
         this.elements.endModal.classList.add('active');
 
         if(this.state.currentEnding === "good") {
-            this.elements.endTitle.textContent = "结局一：薪火相传";
-            this.elements.endText.innerHTML = `
-            1974年，65位前辈从上海来到南昌<br>
+            const hasTruth = this.state.foundTheTruth;
+            this.elements.endTitle.textContent = hasTruth ? "结局一：薪火相传" : "结局二：未完待续";
+            this.elements.endText.innerHTML = hasTruth ? `
+            1974年，六十五位前辈从上海来到南昌<br>
             在荒山上建起了华东交通大学<br>
             林慧老师是其中之一<br>
             她把生命献给了这所学校<br><br>
-            50年来，她一直守护着这里<br>
+            五十年来，她一直守护着这里<br>
             守护着每一个花椒人<br><br>
+            你把她留下的资料送到了档案室<br>
+            她的名字被刻在了建校先驱纪念墙上<br>
+            开山亭旁边，又多了一块碑<br>
+            上面写着她的故事<br><br>
             <span style="color:#006633">日新其德，止于至善</span><br>
             这是她留给我们最后的话<br><br>
             ✨ 花椒在等你 ✨
+            ` : `
+            你完成了林老师的心愿<br>
+            但你知道——<br>
+            1974年的故事还有很多没有被发现<br><br>
+            开山亭还在<br>
+            孔目湖还在<br>
+            那棵法桐树还在<br><br>
+            也许有一天<br>
+            会有另一个人<br>
+            找到更多关于他们的故事<br><br>
+            ✨ 花椒在等你 ✨
             `;
         } else if(this.state.currentEnding === "bad") {
-            this.elements.endTitle.textContent = "结局二：永恒守护";
+            this.elements.endTitle.textContent = "结局：擦肩而过";
             this.elements.endText.innerHTML = `
             你没能完成她的心愿<br>
-            她把你永远留在了山洞里<br>
-            从此，你成为了新的守护者<br>
-            和她一起，永远守护着这所学校<br><br>
-            开山亭的石碑上<br>
-            又多了一个名字<br><br>
+            她从你的世界里消失了<br>
+            但你知道——<br>
+            她还在那座山上<br>
+            还在孔目湖边<br>
+            还在天佑桥下<br><br>
+            等着下一个路过的人<br>
+            等着有人停下来<br>
+            听她讲1974年的故事<br><br>
+            也许那个人会是你<br>
+            也许是别人<br>
+            但她会一直等下去<br><br>
             ⚠️ 花椒在等你 ⚠️
             `;
         } else {
-            this.elements.endTitle.textContent = "结局三：擦肩而过";
+            this.elements.endTitle.textContent = "结局：路过";
             this.elements.endText.innerHTML = `
             你走出了山洞<br>
             但什么都没有改变<br>
@@ -942,7 +1162,12 @@ const Game = {
             foundOldPhoto: false,
             heardTheWhisper: false,
             wentToCave: false,
-            helpedHer: false
+            helpedHer: false,
+            courage: 0,
+            memories: 0,
+            readDiary: false,
+            foundTheTruth: false,
+            metHerBefore: false
         };
         this.elements.endModal.classList.remove('active');
         this.elements.startModal.classList.add('active');
